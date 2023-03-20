@@ -1,0 +1,23 @@
+{
+    "name": "aksonnic/laravel-support",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "SilvertipSoftware\\LaravelSupport\\": "src"
+        }
+    },
+    "require-dev": {
+        "php": "^7.3|^8.0",
+        "orchestra/testbench": "~6.0",
+        "phpunit/phpunit": "~9.5",
+        "phpcompatibility/php-compatibility": "9.2.0"
+    },
+    "scripts": {
+        "ut": "phpunit",
+        "csf": "phpcs --standard=style --report-width=80 --colors --basepath=. -s src tests",
+        "cscompat-config": "phpcs --config-set installed_paths devops/style,vendor/phpcompatibility/php-compatibility",
+        "cscompat56": "phpcs --standard=PHPCompatibility --colors --runtime-set testVersion 5.6- --ignore=*.blade.php src tests",
+        "cscompat73": "phpcs --standard=PHPCompatibility --colors --runtime-set testVersion 7.3- --ignore=*.blade.php src tests"
+    }
+}

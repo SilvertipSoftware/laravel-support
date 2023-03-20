@@ -1,0 +1,1 @@
+alert('eyes.js.index');

@@ -1,0 +1,2 @@
+eyes.show
+{{ $message }}

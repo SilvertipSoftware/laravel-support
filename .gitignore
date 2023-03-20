@@ -1,0 +1,4 @@
+.tool-versions
+.phpunit.result.cache
+composer.lock
+vendor/
