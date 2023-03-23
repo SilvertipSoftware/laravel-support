@@ -20,7 +20,7 @@ trait AutoResponds {
         $request = request();
         $request->controller = View::share('controller', $this);
 
-        $response = call_user_func_array([$this, $method], $parameters);
+        $response = call_user_func_array([$this, $method], array_values($parameters));
 
         if ($response instanceof RedirectResponse) {
             $response = $this->mapRedirectResponse($request, $response);

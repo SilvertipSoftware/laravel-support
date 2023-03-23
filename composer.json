@@ -18,6 +18,7 @@
         "csf": "phpcs --standard=style --report-width=80 --colors --basepath=. -s src tests",
         "cscompat-config": "phpcs --config-set installed_paths devops/style,vendor/phpcompatibility/php-compatibility",
         "cscompat56": "phpcs --standard=PHPCompatibility --colors --runtime-set testVersion 5.6- --ignore=*.blade.php src tests",
-        "cscompat73": "phpcs --standard=PHPCompatibility --colors --runtime-set testVersion 7.3- --ignore=*.blade.php src tests"
+        "cscompat73": "phpcs --standard=PHPCompatibility --colors --runtime-set testVersion 7.3- --ignore=*.blade.php src tests",
+        "cscompat8": "phpcs --standard=PHPCompatibility --colors --runtime-set testVersion 8.0- --ignore=*.blade.php src tests"
     }
 }

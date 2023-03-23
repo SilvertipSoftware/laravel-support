@@ -205,7 +205,7 @@ trait AutosavesRelations {
                 });
 
                 $this->setRelation($relationName, $stillExisting);
-            } elseif (method_exists($value, 'isMarkedForDestruction') && $value->isMarkedForDestruction()) {
+            } elseif ($value && method_exists($value, 'isMarkedForDestruction') && $value->isMarkedForDestruction()) {
                 $this->setRelation($relationName, null);
             }
         }
