@@ -7,6 +7,8 @@ use App\Models\Eye;
 use App\Models\Order;
 use App\Models\Tag;
 use App\Models\Tagging;
+use App\Models\State;
+use App\Models\City;
 
 require_once __DIR__ . '/DatabaseTestCase.php';
 require_once __DIR__ . '/../models/TestModels.php';
@@ -148,5 +150,20 @@ class AutosavesRelationsTest extends DatabaseTestCase {
         $order->markForDestruction();
 
         $this->assertTrue($order->isMarkedForDestruction());
+    }
+
+    public function testTouchUsage() {
+        $state = new State();
+        $this->assertFalse($state->isValid());
+
+        $state1 = new State(['name' => 'BC']);
+        $city1 = new City(['name' => 'Richmond']);
+
+        $city1->setRelation('state', $state1);
+        
+        $city1->name = 'Richmond1';
+        $city1->save();
+
+        $this->assertEquals($state1->updated_at, $city1->updated_at);
     }
 }
