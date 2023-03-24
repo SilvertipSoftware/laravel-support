@@ -11,7 +11,7 @@ require_once __DIR__ . '/../models/TestModels.php';
 
 class RestRouterTest extends ControllerTestCase {
 
-    public function setUp() {
+    public function setUp(): void {
         parent::setUp();
 
         Route::get('/hello', ['as' => 'hellos.index']);
