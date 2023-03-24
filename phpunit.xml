@@ -22,6 +22,9 @@
     <testsuite name="Http">
       <directory suffix="Test.php">./tests/Http</directory>
     </testsuite>
+    <testsuite name="Routing">
+      <directory suffix="Test.php">./tests/Routing</directory>
+    </testsuite>
   </testsuites>
   <php>
   </php>

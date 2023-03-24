@@ -21,7 +21,10 @@ class RestRouterTest extends ControllerTestCase {
             Route::resource('eyes', 'App\Http\Controllers\EyesController', ['as' => 'admin']);
         });
 
-        Route::resource('track-backs', 'App\Http\Controllers\EyesController', ['only' => 'index']);
+        //TODO.. maybe need a helper for namespaced route definition?
+        Route::name('post.')->group(function () {
+            Route::resource('track-backs', 'App\Http\Controllers\EyesController', ['only' => 'index']);
+        });
     }
 
     public function testSingleString() {
