@@ -153,17 +153,14 @@ class AutosavesRelationsTest extends DatabaseTestCase {
     }
 
     public function testTouchUsage() {
-        $state = new State();
-        $this->assertFalse($state->isValid());
+        $city = new City(['name' => 'Richmond']);
+        $state = new State(['name' => 'BC']);
 
-        $state1 = new State(['name' => 'BC']);
-        $city1 = new City(['name' => 'Richmond']);
+        $state->setRelation('city', $city);
 
-        $city1->setRelation('state', $state1);
-        
-        $city1->name = 'Richmond1';
-        $city1->save();
+        $state->name = 'BC1';
+        $state->saveOrFail();
 
-        $this->assertEquals($state1->updated_at, $city1->updated_at);
+        $this->assertQueryCount(3);
     }
 }

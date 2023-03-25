@@ -211,34 +211,22 @@ class InvalidNestedAttrModel extends Model {
     }
 }
 
-class State extends Model {
-    public function cities() {
-        return $this->hansMany(City::class);
-    }
-
-    protected function initializeTraits() {
-        parent::initializeTraits();
-    
-        $this->addValidationRules('name', ['required']);
+class City extends Model {
+    public function state() {
+        return $this->belongsTo(State::class);
     }
 }
 
-class City extends Model {
-    protected $touches = ['state'];
+class State extends Model {
+    protected $touches = ['cities'];
 
-    public function state() {
-        return $this->belongsTo(State::class);
+    public function cities() {
+        return $this->hasMany(City::class);
     }
 
     protected static function bootTraits() {
         parent::bootTraits();
 
-        static::addAutosavedRelation('state');
-    }
-
-    protected function initializeTraits() {
-        parent::initializeTraits();
-    
-        $this->addValidationRules('name', ['required']);
+        static::addAutosavedRelation('cities');
     }
 }
