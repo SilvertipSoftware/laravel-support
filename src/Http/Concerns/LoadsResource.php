@@ -20,7 +20,8 @@ trait LoadsResource {
             $this->loadResourceForRoute();
         });
 
-        foreach (Arr::only(isset($this->loadResource) ? $this->loadResource : [], ['only', 'except']) as $key => $actions) {
+        $modifiers = Arr::only(isset($this->loadResource) ? $this->loadResource : [], ['only', 'except']);
+        foreach ($modifiers as $key => $actions) {
             $middleware->{$key}($actions);
         }
     }
