@@ -156,8 +156,12 @@ class AutosavesRelationsTest extends DatabaseTestCase {
         $city = new City(['name' => 'Richmond']);
         $state = new State(['name' => 'BC']);
 
-        $state->setRelation('city', $city);
+        $city->saveOrFail();
+        $state->saveOrFail();
 
+        $this->resetQueries();
+
+        $state->setRelation('cities', $city);
         $state->name = 'BC1';
         $state->saveOrFail();
 

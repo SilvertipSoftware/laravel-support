@@ -212,14 +212,14 @@ class InvalidNestedAttrModel extends Model {
 }
 
 class City extends Model {
+    protected $touches = ['state'];
+
     public function state() {
         return $this->belongsTo(State::class);
     }
 }
 
 class State extends Model {
-    protected $touches = ['cities'];
-
     public function cities() {
         return $this->hasMany(City::class);
     }
