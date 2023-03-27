@@ -147,5 +147,28 @@ class Base extends Migration {
                     ->onDelete('cascade');
             });
         }
+
+        if (!Schema::hasTable('states')) {
+            Schema::create('states', function (Blueprint $table) {
+                $table->increments('id');
+                $table->string('name');
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('cities')) {
+            Schema::create('cities', function (Blueprint $table) {
+                $table->increments('id');
+                $table->integer('state_id')
+                    ->unsigned()
+                    ->nullable();
+                $table->string('name');
+                $table->timestamps();
+
+                $table->foreign('state_id')
+                    ->references('id')->on('states')
+                    ->onDelete('cascade');
+            });
+        }
     }
 }
