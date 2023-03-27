@@ -1,0 +1,52 @@
+name: PR Testing & Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install composer dependencies
+        run: |
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: PHP Lint
+        run: |
+          composer run lint-php
+
+      - name: Check code style
+        run: |
+          composer run cs
+
+      - name: Check PHP compatibility
+        run: |
+          composer run cscompat8
+
+  phpunit:
+    runs-on: ubuntu-latest
+    needs: validation
+    permissions:
+      contents: read
+      checks: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install composer dependencies
+        run: |
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Run tests
+        run: |
+          composer run ut
