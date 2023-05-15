@@ -44,7 +44,7 @@ class AutoRespondsTest extends ControllerTestCase {
         $this->assertEquals('some_vendor::pirates.index', $response->getContent());
     }
 
-    public function testControllerVariablesAreShared() {
+    public function testControllerVariablesAreAvailable() {
         foreach (['html', 'javascript', 'stream'] as $format) {
             $method = 'accept' . ucfirst($format) . 'Headers';
             $headers = $this->{$method}();
@@ -58,6 +58,14 @@ class AutoRespondsTest extends ControllerTestCase {
                 $this->assertStringContainsString($headers['Accept'], $contentType);
             }
         }
+    }
+
+    public function testControllerVariablesAreNotSharedWithOtherViews() {
+        $method = 'acceptHtmlHeaders';
+        $headers = $this->{$method}();
+
+        $response = $this->get('/eyes/SOMEID/edit', $headers)
+            ->assertStatus(500);
     }
 
     public function testHtmlRedirects() {

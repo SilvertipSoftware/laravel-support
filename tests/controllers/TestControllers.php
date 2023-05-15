@@ -14,6 +14,10 @@ class EyesController extends Controller {
         $this->message = 'Showing model ' . $id;
     }
 
+    public function edit($id) {
+        $this->message = 'Editing model ' . $id;
+    }
+
     public function store() {
         return redirect('/eyes/NEWID', 302);
     }

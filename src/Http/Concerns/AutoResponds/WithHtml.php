@@ -15,9 +15,9 @@ trait WithHtml {
             throw new InvalidArgumentException("View [{$viewName}] not found.");
         }
 
-        View::share(get_object_vars($this));
+        $data = $this->dataForView();
 
-        return view($viewName);
+        return view($viewName, $data);
     }
 
     protected function makeHtmlResponseFrom($response) {
