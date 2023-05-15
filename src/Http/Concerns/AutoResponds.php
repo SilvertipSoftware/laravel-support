@@ -52,6 +52,10 @@ trait AutoResponds {
         return $response;
     }
 
+    protected function dataForView() {
+        return get_object_vars($this);
+    }
+
     protected function desiredResponseFormat() {
         return request()->responseFormat ?: 'html';
     }

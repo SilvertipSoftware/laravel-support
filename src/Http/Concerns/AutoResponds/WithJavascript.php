@@ -10,8 +10,9 @@ trait WithJavascript {
     protected $javascriptRedirectView = 'js_redirect';
 
     protected function createJsResponse($status = 200) {
-        View::share(get_object_vars($this));
-        $content = $this->wrapJavascriptViewContent($this->viewNameForRoute());
+        $data = $this->dataForView();
+
+        $content = $this->wrapJavascriptViewContent($this->viewNameForRoute(), $data);
 
         return $this->makeJavascriptResponseFrom(response($content, $status));
     }
@@ -23,10 +24,11 @@ trait WithJavascript {
     }
 
     protected function mapRedirectForJs($response) {
-
-        $content = $this->wrapJavascriptViewContent($this->javascriptRedirectView, [
+        $data = [
             'redirectToUrl' => $response->getTargetUrl()
-        ]);
+        ];
+
+        $content = $this->wrapJavascriptViewContent($this->javascriptRedirectView, $data);
 
         return $this->makeJavascriptResponseFrom(response($content, $response->status()));
     }

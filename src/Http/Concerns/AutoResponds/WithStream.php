@@ -7,17 +7,18 @@ use Illuminate\Support\Facades\View;
 trait WithStream {
 
     protected function createStreamResponse($status = 200) {
-        View::share(get_object_vars($this));
         $streamView = $this->viewNameForRoute();
+        $data = $this->dataForView();
+
         if (View::exists($streamView)) {
             return $this->makeStreamResponseFrom(
-                response(view($streamView)->render(), $status)
+                response(view($streamView, $data)->render(), $status)
             );
         } else {
             $htmlView = $this->viewNameForRoute('html');
 
             return $this->makeHtmlResponseFrom(
-                response(view($htmlView)->render(), $status)
+                response(view($htmlView, $data)->render(), $status)
             );
         }
     }
