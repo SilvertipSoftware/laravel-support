@@ -2,6 +2,7 @@
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
 class Model extends EloquentModel {
@@ -17,6 +18,14 @@ class Model extends EloquentModel {
     }
 
     protected $guarded = [];
+
+    public function __construct($attrsOrParams = []) {
+        $attrs = $attrsOrParams instanceof Arrayable
+            ? $attrsOrParams->toArray()
+            : $attrsOrParams;
+
+        parent::__construct($attrs);
+    }
 
     protected function processRollback() {
         $this->rollbackSelfAndAutosavedRelations();

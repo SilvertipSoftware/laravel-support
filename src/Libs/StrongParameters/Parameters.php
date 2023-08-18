@@ -3,10 +3,11 @@
 namespace SilvertipSoftware\LaravelSupport\Libs\StrongParameters;
 
 use ArrayAccess;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 
-class Parameters implements ArrayAccess {
+class Parameters implements Arrayable, ArrayAccess {
 
     protected $params;
     protected $permitted = false;
