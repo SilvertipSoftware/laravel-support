@@ -16,6 +16,9 @@
     </include>
   </coverage>
   <testsuites>
+    <testsuite name="Libs">
+      <directory suffix="Test.php">./tests/Libs</directory>
+    </testsuite>
     <testsuite name="Eloquent">
       <directory suffix="Test.php">./tests/Eloquent</directory>
     </testsuite>

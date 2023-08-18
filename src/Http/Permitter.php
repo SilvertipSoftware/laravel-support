@@ -16,6 +16,20 @@ class Permitter {
         $this->validator = $validator;
     }
 
+    public function require($keys) {
+        $keys = (array) $keys;
+
+        $topRules = array_reduce($keys, function ($memo, $key) {
+            $memo[$key] = 'required';
+
+            return $memo;
+        }, []);
+
+        $filtered = $this->validator->validate(request(), $topRules);
+
+        return new Permitter($keys, $filtered, $this->validator);
+    }
+
     public function permit(array $spec) {
         $fieldRules = $this->permitRulesFor($spec);
 
@@ -24,14 +38,18 @@ class Permitter {
             $this->keys
         );
 
-        if (count($this->keys) == 1) {
+        if (count($this->keys) == 1 && array_key_exists($this->keys[0], $filtered)) {
             $filtered = $filtered[$this->keys[0]];
         }
 
         return $filtered;
     }
 
-    public function permitRulesFor(array $spec) {
+    public function values() {
+        return $this->values;
+    }
+
+    protected function permitRulesFor(array $spec) {
         $rules = [];
 
         foreach ($this->keys as $key) {

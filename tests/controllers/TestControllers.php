@@ -35,3 +35,46 @@ class TimesController extends Controller {
         $this->freshWhen(null, Carbon::now()->startOfDay());
     }
 }
+
+class ConesController extends Controller {
+
+    public function store() {
+        $mode = request('case');
+        $params = $this->conesParams($mode)->toArray();
+
+        return json_encode($params);
+    }
+
+    protected function conesParams($mode) {
+        switch ($mode) {
+            case 'with_eye':
+                return $this->params()
+                    ->require('cone')
+                    ->permit(['color', 'eye_id']);
+                break;
+            case 'nested':
+                return $this->params()
+                    ->require('cone')
+                    ->permit([
+                        'color',
+                        'eye_attributes' => [
+                            'side'
+                        ]
+                    ]);
+                break;
+            case 'arrays':
+                return $this->params()
+                    ->require('cone')
+                    ->permit([
+                        'array_attribute' => [
+                            ['color']
+                        ]
+                    ]);
+                break;
+            default:
+                return $this->params()
+                    ->require('cone')
+                    ->permit(['color']);
+        }
+    }
+}

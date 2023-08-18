@@ -18,6 +18,7 @@ class ControllerTestCase extends TestCase {
 
         Route::group(['middleware' => ['formats', 'freshness']], function () {
             Route::resource('eyes', 'App\Http\Controllers\EyesController');
+            Route::resource('cones', 'App\Http\Controllers\ConesController');
             Route::resource('addresses', 'App\Http\Controllers\Company\AddressesController');
             Route::resource('pirates', 'SomeVendor\SomePackage\Controllers\PiratesController');
 
