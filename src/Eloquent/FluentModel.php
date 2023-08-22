@@ -27,7 +27,7 @@ class FluentModel extends Fluent {
         return parent::get($key, $default);
     }
 
-    public function offsetSet($key, $value): void {
+    public function offsetSet($key, $value) {
         $method = 'set' . Str::studly($key) . 'Attribute';
 
         if (method_exists($this, $method)) {

@@ -21,11 +21,11 @@ class Parameters implements Arrayable, ArrayAccess {
         return $this->permitted;
     }
 
-    public function offsetExists(mixed $offset): bool {
+    public function offsetExists(mixed $offset) {
         return array_key_exists($offset, $this->params);
     }
 
-    public function offsetGet(mixed $offset): mixed {
+    public function offsetGet(mixed $offset) {
         if (!array_key_exists($offset, $this->params)) {
             return null;
         }
@@ -33,7 +33,7 @@ class Parameters implements Arrayable, ArrayAccess {
         return $this->convertHashesToParameters($offset, $this->params[$offset]);
     }
 
-    public function offsetSet(mixed $offset, mixed $value): void {
+    public function offsetSet(mixed $offset, mixed $value) {
         $this->params[$offset] = $value;
     }
 
@@ -45,7 +45,7 @@ class Parameters implements Arrayable, ArrayAccess {
         $this->offsetSet($offset, $value);
     }
 
-    public function offsetUnset(mixed $offset): void {
+    public function offsetUnset(mixed $offset) {
         unset($this->params[$offset]);
     }
 
