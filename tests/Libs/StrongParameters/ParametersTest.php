@@ -8,6 +8,30 @@ use SilvertipSoftware\LaravelSupport\Libs\StrongParameters\Parameters;
 
 class ParametersTest extends TestCase {
 
+    public function testAccessors() {
+        $params = new Parameters([
+            'name' => 'Bort',
+            'groups' => [
+                ['name' => 'Group1', 'level' => 1],
+                ['name' => 'Group2', 'level' => 2]
+            ],
+            'user' => [
+                'login' => 'bort@domain.com'
+            ]
+        ]);
+
+        $this->assertEquals('Bort', $params['name']);
+        $this->assertEquals(1, $params['groups'][0]['level']);
+        $this->assertEquals('bort@domain.com', $params['user']['login']);
+
+        $this->assertEquals('Bort', $params->name);
+        $this->assertEquals(1, $params->groups[0]->level);
+        $this->assertEquals('bort@domain.com', $params->user->login);
+
+        $this->assertNull($params['password']);
+        $this->assertNull($params->password);
+    }
+
     public function testFalseShouldWork() {
         $this->assertEquals(false, (new Parameters(['person' => false]))->require('person'));
     }
@@ -172,14 +196,14 @@ class ParametersTest extends TestCase {
             'hacked' => new AnyStructure()
         ]);
 
-        $this->assertEquals("fxn",             $permitted['username']);
-        $this->assertEquals("Marazul",         $permitted['preferences']['scheme']);
+        $this->assertEquals("fxn", $permitted['username']);
+        $this->assertEquals("Marazul", $permitted['preferences']['scheme']);
         $this->assertEquals("Source Code Pro", $permitted['preferences']['font']['name']);
-        $this->assertEquals(12,                $permitted['preferences']['font']['size']);
-        $this->assertEquals([4, 8, 12, 16],    $permitted['preferences']['tabstops']);
-        $this->assertEquals([true, false],     $permitted['preferences']['suspicious']);
-        $this->assertEquals('a',               $permitted['preferences']['dubious'][0]['a']);
-        $this->assertEquals('c',               $permitted['preferences']['dubious'][1]['c']);
+        $this->assertEquals(12, $permitted['preferences']['font']['size']);
+        $this->assertEquals([4, 8, 12, 16], $permitted['preferences']['tabstops']);
+        $this->assertEquals([true, false], $permitted['preferences']['suspicious']);
+        $this->assertEquals('a', $permitted['preferences']['dubious'][0]['a']);
+        $this->assertEquals('c', $permitted['preferences']['dubious'][1]['c']);
 
         $this->assertFalse(isset($permitted['preferences']['dubious'][0]['b']));
         $this->assertFalse(isset($permitted['preferences']['injected']));
@@ -221,7 +245,6 @@ class ParametersTest extends TestCase {
         ]);
 
         $this->assertTrue($permitted->isPermitted());
-        //var_dump($permitted->toArray());
         $this->assertEquals('Romeo and Juliet', $permitted['book']['title']);
         $this->assertEquals("William Shakespeare", $permitted['book']['authors'][0]['name']);
         $this->assertEquals("Christopher Marlowe", $permitted['book']['authors'][1]['name']);
@@ -229,8 +252,96 @@ class ParametersTest extends TestCase {
 
         $this->assertNull($permitted['magazine']);
         $this->assertNull($permitted['book']['id']);
-        //   assert_filtered_out permitted[:book][:details], :genre
-        //   assert_filtered_out permitted[:book][:authors][0], :born
-        //   assert_filtered_out permitted[:book][:authors][2], :name
+        $this->assertNull($permitted['book']['details']['genre']);
+        $this->assertNull($permitted['book']['authors'][0]['born']);
+        $this->assertNull($permitted['book']['authors'][2]['name']);
+    }
+
+    public function testNestedParamsWithNumericKeys() {
+        $params = new Parameters([
+            'book' => [
+                'authors_attributes' => [
+                    '0' => ['name' => 'William Shakespeare', 'age_of_death' => 52],
+                    '1' => ['name' => 'Unattributed Assistant'],
+                    '2' => ['name' => ['injected', 'names']]
+                ]
+            ]
+        ]);
+
+        $permitted = $params->permit([
+            'book' => [
+                'authors_attributes' => [['name']]
+            ]
+        ]);
+
+        $this->assertNotNull($permitted['book']['authors_attributes']['0']);
+        $this->assertNotNull($permitted['book']['authors_attributes']['1']);
+        $this->assertEquals([], $permitted['book']['authors_attributes']['2']->toArray());
+        $this->assertEquals('William Shakespeare', $permitted['book']['authors_attributes']['0']['name']);
+        $this->assertEquals('Unattributed Assistant', $permitted['book']['authors_attributes']['1']['name']);
+    }
+
+    public function testNestedParamsWithNonNumericKeys() {
+        $params = new Parameters([
+            'book' => [
+                'authors_attributes' => [
+                    '0' => ['name' => 'William Shakespeare', 'age_of_death' => 52],
+                    '1' => ['name' => 'Unattributed Assistant'],
+                    '2' => 'Not a hash',
+                    'new_record' => ['name' => 'Some name']
+                ]
+            ]
+        ]);
+
+        $permitted = $params->permit([
+            'book' => [
+                'authors_attributes' => [['name']]
+            ]
+        ]);
+
+        $this->assertNotNull($permitted['book']['authors_attributes']['0']);
+        $this->assertNotNull($permitted['book']['authors_attributes']['1']);
+        $this->assertNull($permitted['book']['authors_attributes']['2']);
+        $this->assertNull($permitted['book']['authors_attributes']['new_record']);
+
+        $this->assertEquals('William Shakespeare', $permitted['book']['authors_attributes']['0']['name']);
+        $this->assertEquals('Unattributed Assistant', $permitted['book']['authors_attributes']['1']['name']);
+
+        $this->assertEquals([
+            'book' => [
+                'authors_attributes' => [
+                    '0' => ['name' => 'William Shakespeare'],
+                    '1' => ['name' => 'Unattributed Assistant']
+                ]
+            ]
+        ], $permitted->toArray());
+    }
+
+    public function testNestedParamsWithNegativeNumericKeys() {
+        $params = new Parameters([
+            'book' => [
+                'authors_attributes' => [
+                    '-1' => ['name' => 'William Shakespeare', 'age_of_death' => 52],
+                    '-2' => ['name' => 'Unattributed Assistant']
+                ]
+            ]
+        ]);
+
+        $permitted = $params->permit([
+            'book' => [
+                'authors_attributes' => [['name']]
+            ]
+        ]);
+
+        $this->assertNotNull($permitted['book']['authors_attributes']['-1']);
+        $this->assertNotNull($permitted['book']['authors_attributes']['-2']);
+        $this->assertEquals('William Shakespeare', $permitted['book']['authors_attributes']['-1']['name']);
+        $this->assertEquals('Unattributed Assistant', $permitted['book']['authors_attributes']['-2']['name']);
+
+        $this->assertNull($permitted['book']['authors_attributes']['-1']['age_of_death']);
+    }
+
+    public function testNestedParamsWithTargettedNumericKeys() {
+        $this->markTestSkipped('PHP cannot really do this since arrays and hashes are the same thing.');
     }
 }

@@ -17,11 +17,6 @@ class Parameters implements Arrayable, ArrayAccess {
         $this->params = $params;
     }
 
-    public static function isNestedAttribute($key, $value) {
-        return preg_match('/\A-?\d+\z/', $key) == 1
-            && (is_array($value) || $value instanceof Parameters);
-    }
-
     public function isPermitted() {
         return $this->permitted;
     }
@@ -119,11 +114,54 @@ class Parameters implements Arrayable, ArrayAccess {
         throw new UnfilteredParametersException();
     }
 
+    protected static function eachElement($object, $filter, $callback) {
+        if (is_array($object)) {
+            $parameterObjects = array_filter($object, function ($elem) {
+                return ($elem instanceof Parameters);
+            });
+
+            return array_map($callback, $parameterObjects);
+        } elseif ($object instanceof Parameters) {
+            if ($object->hasNestedAttributes()) {
+                return $object->eachNestedAttribute($callback);
+            } else {
+                return $callback($object);
+            }
+        }
+    }
+
+    protected static function isNestedAttribute($key, $value) {
+        return is_numeric($key)
+            && is_int(0 + $key)
+            && ((is_array($value) && Arr::isAssoc($value)) || $value instanceof Parameters);
+    }
+
+    protected static function isPermittedScalar($value) {
+        return is_string($value)
+            || is_numeric($value)
+            || is_bool($value)
+            || ($value instanceof UploadedFile);
+    }
+
+    protected static function permitAnyInArray($arr) {
+        $ret = [];
+
+        foreach ($arr as $element) {
+            if (Parameters::isPermittedScalar($element)) {
+                $ret[] = $element;
+            } elseif ($element instanceof Parameters) {
+                $ret[] = $element->permitAnyInSelf();
+            }
+        }
+
+        return $ret;
+    }
+
     protected function arrayOfPermittedScalars($value) {
         if (is_array($value)) {
             $allScalars = true;
             foreach ($value as $v) {
-                if (!$this->isPermittedScalar($v)) {
+                if (!Parameters::isPermittedScalar($v)) {
                     $allScalars = false;
                     break;
                 }
@@ -181,20 +219,16 @@ class Parameters implements Arrayable, ArrayAccess {
         return $value;
     }
 
-    protected function eachElement($object, $filter, $callable) {
-        if (is_array($object)) {
-            $parameterObjects = array_filter($object, function ($elem) {
-                return ($elem instanceof Parameters);
-            });
+    protected function eachNestedAttribute($callback) {
+        $ret = new static();
 
-            return array_map($callable, $parameterObjects);
-            // array_walk($parameterObjects, $callable);
+        $this->eachPair(function ($key, $value) use ($ret, $callback) {
+            if (Parameters::isNestedAttribute($key, $value)) {
+                $ret[$key] = $callback($value);
+            }
+        });
 
-            // return $parameterObjects;
-        } elseif ($object instanceof Parameters) {
-            return $callable($object);
-//            return $object;
-        }
+        return $ret;
     }
 
     protected function eachPair(callable $callback) {
@@ -218,7 +252,7 @@ class Parameters implements Arrayable, ArrayAccess {
                 }
             } elseif ($filterValue instanceof AnyStructure) {
                 if ($value instanceof Parameters) {
-                    $parameters[$key] = $this->permitAnyInParameters($value);
+                    $parameters[$key] = $value->permitAnyInSelf();
                 }
             } elseif ($filterValue !== null) {
                 if (is_array($value) || $value instanceof Parameters) {
@@ -226,7 +260,7 @@ class Parameters implements Arrayable, ArrayAccess {
                         ? $filterValue[0]
                         : $filterValue;
 
-                    $mapped = $this->eachElement($value, $filterValue, function ($element) use ($newPermits) {
+                    $mapped = Parameters::eachElement($value, $filterValue, function ($element) use ($newPermits) {
                         return $element->permit($newPermits);
                     });
 
@@ -236,37 +270,26 @@ class Parameters implements Arrayable, ArrayAccess {
         }
     }
 
-    protected function isPermittedScalar($value) {
-        return is_string($value)
-            || is_numeric($value)
-            || is_bool($value)
-            || ($value instanceof UploadedFile);
-    }
-
-    protected function permitAnyInArray($arr) {
-        $ret = [];
-
-        foreach ($arr as $element) {
-            if ($this->isPermittedScalar($element)) {
-                $ret[] = $element;
-            } elseif ($element instanceof Parameters) {
-                $ret[] = $this->permitAnyInParameters($element);
+    protected function hasNestedAttributes() {
+        foreach ($this->params as $key => $value) {
+            if (Parameters::isNestedAttribute($key, $value)) {
+                return true;
             }
         }
 
-        return $ret;
+        return false;
     }
 
-    protected function permitAnyInParameters($params) {
+    protected function permitAnyInSelf() {
         $ret = new static();
 
-        $params->eachPair(function ($key, $value) use ($ret) {
-            if ($this->isPermittedScalar($value)) {
+        $this->eachPair(function ($key, $value) use ($ret) {
+            if (Parameters::isPermittedScalar($value)) {
                 $ret[$key] = $value;
             } elseif (is_array($value)) {
-                $ret[$key] = $this->permitAnyInArray($value);
+                $ret[$key] = Parameters::permitAnyInArray($value);
             } elseif ($value instanceof Parameters) {
-                $ret[$key] = $this->permitAnyInParameters($value);
+                $ret[$key] = $value->permitAnyInSelf();
             }
         });
 
@@ -277,7 +300,7 @@ class Parameters implements Arrayable, ArrayAccess {
         if ($this->offsetExists($filter)) {
             $value = $this->params[$filter];
 
-            if ($this->isPermittedScalar($value)) {
+            if (Parameters::isPermittedScalar($value)) {
                 $parameters[$filter] = $value;
             }
         }
