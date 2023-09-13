@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\Comment;
 use App\Models\Reply;
+use App\Models\Review;
 use Illuminate\Support\Facades\Lang;
 use Orchestra\Testbench\TestCase;
 
-require_once __DIR__ . '/../models/Comment.php';
+require_once __DIR__ . '/../models/TestModels.php';
 require_once __DIR__ . '/../models/Reply.php';
 
 class ValidationTest extends TestCase {
@@ -56,14 +56,14 @@ class ValidationTest extends TestCase {
 
     public function testCustomAttributeNames() {
         Lang::addLines([
-            'eloquent.attributes.comment.content' => 'comment body'
+            'eloquent.attributes.review.content' => 'review body'
         ], 'en');
 
-        $comment = new Comment();
-        $this->assertFalse($comment->isValid());
-        $this->assertCount(1, $comment->errors);
-        $this->assertTrue($comment->errors->has('content'));
-        $this->assertStringContainsString('comment body', $comment->errors->first('content'));
+        $review = new Review();
+        $this->assertFalse($review->isValid());
+        $this->assertCount(1, $review->errors);
+        $this->assertTrue($review->errors->has('content'));
+        $this->assertStringContainsString('review body', $review->errors->first('content'));
     }
 
     public function testMethodCallingRule() {

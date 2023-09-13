@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Arr;
+use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
 use SilvertipSoftware\LaravelSupport\Eloquent\Model;
 
 class Account extends Model {
@@ -164,7 +166,8 @@ class Order extends Model {
     }
 }
 
-class Tag extends Model {
+class Tog extends Model {
+    public $table = 'tags';
     public $timestamps = false;
 
     public function taggings() {
@@ -176,7 +179,7 @@ class Tagging extends Model {
     public $timestamps = false;
 
     public function tag() {
-        return $this->belongsTo(Tag::class);
+        return $this->belongsTo(Tog::class);
     }
 
     public function taggable() {
@@ -230,3 +233,18 @@ class State extends Model {
         static::addAutosavedRelation('cities');
     }
 }
+
+class Movie extends Model {
+    protected $primaryKey = 'movieid';
+}
+
+class Review extends Model {
+    protected $validationRules = [
+        'content' => ['required']
+    ];
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
+}
+

@@ -133,8 +133,8 @@ class Base extends Migration {
             });
         }
 
-        if (!Schema::hasTable('comments')) {
-            Schema::create('comments', function (Blueprint $table) {
+        if (!Schema::hasTable('reviews')) {
+            Schema::create('reviews', function (Blueprint $table) {
                 $table->increments('id');
                 $table->integer('user_id')
                     ->unsigned()

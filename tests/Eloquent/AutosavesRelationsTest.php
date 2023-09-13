@@ -5,7 +5,7 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Eye;
 use App\Models\Order;
-use App\Models\Tag;
+use App\Models\Tog;
 use App\Models\Tagging;
 use App\Models\State;
 use App\Models\City;
@@ -128,7 +128,7 @@ class AutosavesRelationsTest extends DatabaseTestCase {
     public function testStorePolymorphicBelongsTo() {
         $numTaggings = Tagging::count();
 
-        $tag = Tag::create(['label' => 'Misc']);
+        $tag = Tog::create(['label' => 'Misc']);
         $tagging = new Tagging(['tag_id' => $tag->id]);
         $customer = Customer::create(['name' => 'Joe']);
 

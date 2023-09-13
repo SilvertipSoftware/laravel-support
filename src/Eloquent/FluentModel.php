@@ -37,6 +37,10 @@ class FluentModel extends Fluent {
         }
     }
 
+    public function toModel() {
+        return $this;
+    }
+
     protected function validateAutosavedRelations() {
     }
 

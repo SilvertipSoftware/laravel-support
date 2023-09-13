@@ -27,6 +27,10 @@ class Model extends EloquentModel {
         parent::__construct($attrs);
     }
 
+    public function toModel() {
+        return $this;
+    }
+
     protected function processRollback() {
         $this->rollbackSelfAndAutosavedRelations();
     }

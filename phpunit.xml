@@ -28,6 +28,9 @@
     <testsuite name="Routing">
       <directory suffix="Test.php">./tests/Routing</directory>
     </testsuite>
+    <testsuite name="Blade">
+      <directory suffix="Test.php">./tests/Blade</directory>
+    </testsuite>
   </testsuites>
   <php>
   </php>

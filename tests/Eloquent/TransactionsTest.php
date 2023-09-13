@@ -1,30 +1,29 @@
 <?php
 
-use App\Models\Comment;
+use App\Models\Review;
 use App\Models\Movie;
 use App\Models\User;
 
 require_once __DIR__ . '/DatabaseTestCase.php';
-require_once __DIR__ . '/../models/Comment.php';
-require_once __DIR__ . '/../models/Movie.php';
+require_once __DIR__ . '/../models/TestModels.php';
 require_once __DIR__ . '/../models/User.php';
 
 class TransactionsTest extends DatabaseTestCase {
 
     public function setUp(): void {
         parent::setUp();
-        $this->comment = Comment::create(['content' => 'Existing']);
+        $this->review = Review::create(['content' => 'Existing']);
     }
 
     public function testAfterCommitCallbackCalled() {
         $called = false;
 
-        Comment::registerModelEvent('afterCommit', function ($model) use (&$called) {
+        Review::registerModelEvent('afterCommit', function ($model) use (&$called) {
             $called = true;
         });
 
-        $comment = new Comment(['content' => 'Initial']);
-        $comment->saveOrFail();
+        $review = new Review(['content' => 'Initial']);
+        $review->saveOrFail();
 
         $this->assertTrue($called);
     }
@@ -32,15 +31,15 @@ class TransactionsTest extends DatabaseTestCase {
     public function testAfterRollbackCallbackCalled() {
         $called = false;
 
-        Comment::registerModelEvent('afterRollback', function ($model) use (&$called) {
+        Review::registerModelEvent('afterRollback', function ($model) use (&$called) {
             $called = true;
         });
 
-        $comment = new Comment(['content' => 'Initial']);
+        $review = new Review(['content' => 'Initial']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->save();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->save();
                 throw new Exception('nope');
             });
         } catch (Exception $ex) {
@@ -50,345 +49,345 @@ class TransactionsTest extends DatabaseTestCase {
     }
 
     public function testSyncOriginalOnSave() {
-        $comment = Comment::find($this->comment->id);
-        $comment->content = 'new content';
-        $comment->saveOrFail();
+        $review = Review::find($this->review->id);
+        $review->content = 'new content';
+        $review->saveOrFail();
 
-        $this->assertCount(0, $comment->getDirty());
+        $this->assertCount(0, $review->getDirty());
     }
 
     public function testRollbackForValidation() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->update(['content' => null]);
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->update(['content' => null]);
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertEquals(null, $comment->content);
-        $this->assertEquals('Existing', $comment->fresh()->content);
+        $this->assertEquals(null, $review->content);
+        $this->assertEquals('Existing', $review->fresh()->content);
     }
 
 
     public function testRollbackOfDirtyAttributeFlags() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->update(['content' => 'New content']);
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->update(['content' => 'New content']);
                 throw new Exception('nope');
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertCount(1, $comment->getDirty());
+        $this->assertCount(1, $review->getDirty());
     }
 
     public function testRollbackOfMultipleChanges() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->update(['content' => 'New content']);
-                $comment->update(['content' => 'More new content']);
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->update(['content' => 'New content']);
+                $review->update(['content' => 'More new content']);
                 throw new Exception('nope');
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertCount(1, $comment->getDirty());
-        $this->assertEquals('Existing', $comment->getOriginal('content'));
-        $this->assertEquals('More new content', $comment->content);
+        $this->assertCount(1, $review->getDirty());
+        $this->assertEquals('Existing', $review->getOriginal('content'));
+        $this->assertEquals('More new content', $review->content);
     }
 
     public function testRollbackThenSave() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->update(['content' => 'New content']);
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->update(['content' => 'New content']);
                 throw new Exception('nope');
             });
         } catch (Exception $ex) {
         }
 
-        $comment->update(['content' => 'Retried content']);
+        $review->update(['content' => 'Retried content']);
 
-        $this->assertCount(0, $comment->getDirty());
-        $this->assertEquals($comment->content, $comment->fresh()->content);
+        $this->assertCount(0, $review->getDirty());
+        $this->assertEquals($review->content, $review->fresh()->content);
     }
 
     public function testRollbackRevertsKeyExistsAndCreated() {
-        $comment = new Comment(['content' => 'Initial']);
+        $review = new Review(['content' => 'Initial']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->save();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->save();
                 throw new Exception('nope');
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertNull($comment->id);
-        $this->assertFalse($comment->exists);
-        $this->assertFalse($comment->wasRecentlyCreated);
+        $this->assertNull($review->id);
+        $this->assertFalse($review->exists);
+        $this->assertFalse($review->wasRecentlyCreated);
     }
 
     public function testRollbackAfterDeleteRevertsExists() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->delete();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->delete();
                 throw new Exception('nope');
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertNotNull($comment->id);
-        $this->assertTrue($comment->exists);
+        $this->assertNotNull($review->id);
+        $this->assertTrue($review->exists);
     }
 
     public function testSuccess() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->update(['content' => 'New content']);
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->update(['content' => 'New content']);
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertCount(0, $comment->getDirty());
-        $this->assertEquals($comment->content, $comment->fresh()->content);
+        $this->assertCount(0, $review->getDirty());
+        $this->assertEquals($review->content, $review->fresh()->content);
     }
 
     public function testExceptionInSavingCallbackRollsback() {
-        Comment::saving(function ($model) {
+        Review::saving(function ($model) {
             if ($model->content === 'RAISE') {
                 throw new Exception('Callback exception');
             }
         });
 
-        $comment = new Comment(['content' => 'RAISE']);
+        $review = new Review(['content' => 'RAISE']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->save();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->save();
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertNull($comment->id);
-        $this->assertFalse($comment->exists);
-        $this->assertFalse($comment->wasRecentlyCreated);
+        $this->assertNull($review->id);
+        $this->assertFalse($review->exists);
+        $this->assertFalse($review->wasRecentlyCreated);
     }
 
     public function testExceptionInSavedCallbackRollsback() {
-        Comment::saved(function ($model) {
+        Review::saved(function ($model) {
             if ($model->content === 'RAISE') {
                 throw new Exception('Callback exception');
             }
         });
 
-        $comment = new Comment(['content' => 'RAISE']);
+        $review = new Review(['content' => 'RAISE']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
+            $this->getConnection()->transaction(function () use ($review) {
                 // does this need to be saveOrFail()?
-                $comment->saveOrFail();
+                $review->saveOrFail();
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertNull($comment->id);
-        $this->assertFalse($comment->exists);
-        $this->assertFalse($comment->wasRecentlyCreated);
+        $this->assertNull($review->id);
+        $this->assertFalse($review->exists);
+        $this->assertFalse($review->wasRecentlyCreated);
     }
 
     public function testStateWhenFailedAfterAlreadyExists() {
-        $comment = Comment::find($this->comment->id);
+        $review = Review::find($this->review->id);
 
-        $comment->content = null;
-        $ret = $comment->save();
+        $review->content = null;
+        $ret = $review->save();
 
         $this->assertFalse($ret);
-        $this->assertTrue($comment->exists);
+        $this->assertTrue($review->exists);
     }
 
     public function testAutosaveRollsbackOnFailure() {
         $user = User::create(['name' => 'Bob']);
-        $comment = Comment::create(['content' => 'Comment', 'user_id' => $user->id]);
+        $review = Review::create(['content' => 'Review', 'user_id' => $user->id]);
 
         $this->assertTrue($user->exists);
-        $this->assertTrue($comment->exists);
+        $this->assertTrue($review->exists);
 
         $user->name = null;
-        $user->setRelation('comments', collect());
+        $user->setRelation('reviews', collect());
 
         $ret = $user->save();
 
         $this->assertFalse($ret);
-        $this->assertEquals(1, $user->fresh()->comments()->count());
+        $this->assertEquals(1, $user->fresh()->reviews()->count());
     }
 
     public function testAutosaveRollsbackOnFailureWithThrow() {
         $user = User::create(['name' => 'Bob']);
-        $comment = Comment::create(['content' => 'Comment', 'user_id' => $user->id]);
+        $review = Review::create(['content' => 'Review', 'user_id' => $user->id]);
 
         $this->assertTrue($user->exists);
-        $this->assertTrue($comment->exists);
+        $this->assertTrue($review->exists);
 
         $user->name = null;
-        $user->setRelation('comments', collect());
+        $user->setRelation('reviews', collect());
 
         try {
             $ret = $user->saveOrFail();
         } catch (Exception $ex) {
         }
 
-        $this->assertEquals(1, $user->fresh()->comments()->count());
+        $this->assertEquals(1, $user->fresh()->reviews()->count());
     }
 
     public function testCancelInDeletingCallbackRollsback() {
-        $comment = Comment::first();
-        $comment->update(['content' => 'CANCELDELETE']);
+        $review = Review::first();
+        $review->update(['content' => 'CANCELDELETE']);
 
-        Comment::deleting(function ($model) {
+        Review::deleting(function ($model) {
             return $model->content != 'CANCELDELETE';
         });
 
-        $comment = $comment->fresh();
+        $review = $review->fresh();
 
-        $numComments = Comment::count();
-        $this->assertGreaterThan(0, $numComments);
+        $numReviews = Review::count();
+        $this->assertGreaterThan(0, $numReviews);
 
-        $comment->delete();
+        $review->delete();
 
-        $this->assertEquals($numComments, Comment::count());
+        $this->assertEquals($numReviews, Review::count());
     }
 
     public function testFailInCreatingCallback() {
-        Comment::creating(function ($model) {
+        Review::creating(function ($model) {
             return $model->content != 'CANCELCREATING';
         });
 
-        $comment = Comment::create(['content' => 'CANCELCREATING']);
+        $review = Review::create(['content' => 'CANCELCREATING']);
 
-        $this->assertFalse($comment->exists);
-        $this->assertNull($comment->id);
-        $this->assertFalse($comment->wasRecentlyCreated);
+        $this->assertFalse($review->exists);
+        $this->assertNull($review->id);
+        $this->assertFalse($review->wasRecentlyCreated);
     }
 
     public function testFailInCreatedCallback() {
-        Comment::created(function ($model) {
+        Review::created(function ($model) {
             if ($model->content == 'CANCELCREATED') {
                 throw new Exception("fail");
             }
         });
 
-        $numComments = Comment::count();
+        $numReviews = Review::count();
 
-        $comment = Comment::create(['content' => 'CANCELCREATED']);
+        $review = Review::create(['content' => 'CANCELCREATED']);
 
-        $this->assertEquals($numComments, Comment::count());
-        $this->assertFalse($comment->exists);
-        $this->assertNull($comment->id);
-        $this->assertFalse($comment->wasRecentlyCreated);
+        $this->assertEquals($numReviews, Review::count());
+        $this->assertFalse($review->exists);
+        $this->assertNull($review->id);
+        $this->assertFalse($review->wasRecentlyCreated);
     }
 
     public function testRollbackOfFreshlyCreatedRecords() {
-        $comment = Comment::create(['content' => 'Fresh']);
+        $review = Review::create(['content' => 'Fresh']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->delete();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->delete();
                 throw new Exception("fail");
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertTrue($comment->wasRecentlyCreated);
-        $this->assertTrue($comment->exists);
+        $this->assertTrue($review->wasRecentlyCreated);
+        $this->assertTrue($review->exists);
     }
 
     public function testRestoreStateForAllRecordsInTxn() {
-        $comment1 = new Comment(['content' => 'One']);
-        $comment2 = new Comment(['content' => 'Two']);
+        $review1 = new Review(['content' => 'One']);
+        $review2 = new Review(['content' => 'Two']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment1, $comment2) {
-                $comment1->saveOrFail();
-                $comment2->saveOrFail();
-                $this->comment->delete();
+            $this->getConnection()->transaction(function () use ($review1, $review2) {
+                $review1->saveOrFail();
+                $review2->saveOrFail();
+                $this->review->delete();
 
-                $this->assertTrue($comment1->exists);
-                $this->assertNotNull($comment1->id);
-                $this->assertTrue($comment2->exists);
-                $this->assertNotNull($comment1->id);
-                $this->assertFalse($this->comment->exists);
+                $this->assertTrue($review1->exists);
+                $this->assertNotNull($review1->id);
+                $this->assertTrue($review2->exists);
+                $this->assertNotNull($review1->id);
+                $this->assertFalse($this->review->exists);
 
                 throw new Exception('fail');
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertFalse($comment1->exists);
-        $this->assertNull($comment1->id);
-        $this->assertFalse($comment2->exists);
-        $this->assertNull($comment1->id);
-        $this->assertTrue($this->comment->exists);
+        $this->assertFalse($review1->exists);
+        $this->assertNull($review1->id);
+        $this->assertFalse($review2->exists);
+        $this->assertNull($review1->id);
+        $this->assertTrue($this->review->exists);
     }
 
     public function testRestoreExistsAfterDoubleSave() {
-        $comment = new Comment(['content' => 'Fresh']);
+        $review = new Review(['content' => 'Fresh']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->saveOrFail();
-                $comment->saveOrFail();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->saveOrFail();
+                $review->saveOrFail();
                 throw new Exception('fail');
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertFalse($comment->exists);
+        $this->assertFalse($review->exists);
     }
 
     public function testDontRestoreRecentlyCreatedInNewTransaction() {
-        $comment = new Comment(['content' => 'Fresh']);
+        $review = new Review(['content' => 'Fresh']);
 
-        $this->getConnection()->transaction(function () use ($comment) {
-            $comment->saveOrFail();
+        $this->getConnection()->transaction(function () use ($review) {
+            $review->saveOrFail();
         });
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->saveOrFail();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->saveOrFail();
                 throw new Exception("fail");
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertTrue($comment->wasRecentlyCreated);
-        $this->assertTrue($comment->exists);
-        $this->assertNotNull($comment->id);
+        $this->assertTrue($review->wasRecentlyCreated);
+        $this->assertTrue($review->exists);
+        $this->assertNotNull($review->id);
     }
 
     public function testRollbackOfPrimaryKey() {
-        $comment = new Comment(['content' => 'Movie']);
+        $review = new Review(['content' => 'Movie']);
 
         try {
-            $this->getConnection()->transaction(function () use ($comment) {
-                $comment->saveOrFail();
+            $this->getConnection()->transaction(function () use ($review) {
+                $review->saveOrFail();
                 throw new Exception("fail");
             });
         } catch (Exception $ex) {
         }
 
-        $this->assertNull($comment->id);
+        $this->assertNull($review->id);
     }
 
     public function testRollbackOfCustomPrimaryKey() {

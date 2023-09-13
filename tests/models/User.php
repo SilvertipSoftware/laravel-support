@@ -15,12 +15,12 @@ class User extends Model {
     }
 
     public function __construct($attributes = []) {
-        $this->addAutosavedRelation('comments');
+        $this->addAutosavedRelation('reviews');
 
         parent::__construct($attributes);
     }
 
-    public function comments() {
-        return $this->hasMany(Comment::class);
+    public function reviews() {
+        return $this->hasMany(Review::class);
     }
 }

@@ -1,4 +1,5 @@
 .tool-versions
 .phpunit.result.cache
 composer.lock
+devops/coverage
 vendor/
