@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
@@ -12,7 +14,7 @@ class SearchField extends TextField {
         $autosave = Arr::get($options, 'autosave');
         if ($autosave) {
             if ($autosave === true) {
-                $host = request()?->getHost() ?? '';
+                $host = request()->getHost() ?: '';
                 $options['autosave'] = implode('.', array_reverse(explode('.', $host)));
             }
             $options['results'] = Arr::get($options, 'results', 10);

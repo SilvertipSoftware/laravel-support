@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 use Illuminate\Support\Arr;
@@ -17,19 +19,16 @@ trait FormTagHelper {
 
     public static function buttonTag($content = null, $options = [], $block = null) {
         list($content, $options, $block) = Utils::determineTagArgs($content, $options, $block);
-        $options = $options ?? [];
 
-        $opts = [
-            'name' => 'button',
-            'type' => 'submit'
-        ];
-        $options = array_merge($opts, $options);
-
-        if (is_callable($block)) {
-            return static::contentTag('button', $options, $block);
+        $yield = $block != null;
+        $generator = static::yieldingButtonTag($content, $options, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block();
+            }
         }
 
-        return static::contentTag('button', $content ?? 'Button', $options);
+        return $generator->getReturn();
     }
 
     public static function checkBoxTag($name, $value = "1", $checked = false, $options = []) {
@@ -62,6 +61,12 @@ trait FormTagHelper {
 
     public static function emailFieldTag($name, $value = null, $options = []) {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'email']));
+    }
+
+    public static function fileFieldTag($name, $options = []) {
+        $opts = array_merge($options, ['type' => 'file']);
+
+        return static::textFieldTag($name, null, static::convertDirectUploadOptionToUrl($opts));
     }
 
     public static function hiddenFieldTag($name, $value = null, $options = []) {
@@ -116,11 +121,11 @@ trait FormTagHelper {
         }
     }
 
-    public static function formTag($urlForOptions = [], $options = []) {
-        $htmlOptions = static::htmlOptionsForForm($urlForOptions, $options);
+    // public static function formTag($urlForOptions = [], $options = []) {
+    //     $htmlOptions = static::htmlOptionsForForm($urlForOptions, $options);
 
-        return static::formTagHtml($htmlOptions);
-    }
+    //     return static::formTagHtml($htmlOptions);
+    // }
 
     public static function formTagHtml($options) {
         $extraTags = static::extraTagsForForm($options);
@@ -134,13 +139,16 @@ trait FormTagHelper {
 
     public static function labelTag($name = null, $contentOrOptions = null, $options = [], $block = null) {
         list($content, $options, $block) = Utils::determineTagArgs($contentOrOptions, $options, $block);
-        $options = $options ?? [];
 
-        if (!empty($name) && !array_key_exists('for', $options)) {
-            $options['for'] = static::sanitizeToId($name);
+        $yield = $block != null;
+        $generator = static::yieldingLabelTag($name, $content, $options, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block();
+            }
         }
 
-        return static::contentTag('label', $content ?? Str::title(Str::slug($name)), $options, $block);
+        return $generator->getReturn();
     }
 
     public static function monthFieldTag($name, $value = null, $options = []) {
@@ -237,7 +245,42 @@ trait FormTagHelper {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'week']));
     }
 
-    private static function convertDirectUploadOptionToUrl($options) {
+    public static function yieldingButtonTag($content = null, $options = [], $yield = true) {
+        list($content, $options) = Utils::determineTagArgs($content, $options);
+        $options = $options ?? [];
+
+        $opts = [
+            'name' => 'button',
+            'type' => 'submit'
+        ];
+        $options = array_merge($opts, $options);
+
+        $generator = static::yieldingContentTag('button', $content ?? 'Button', $options, !$yield, $yield);
+        yield from $generator;
+        return $generator->getReturn();
+    }
+
+    public static function yieldingLabelTag($name = null, $contentOrOptions = null, $options = [], $yield = true) {
+        list($content, $options) = Utils::determineTagArgs($contentOrOptions, $options);
+        $options = $options ?? [];
+
+        if (!empty($name) && !array_key_exists('for', $options)) {
+            $options['for'] = static::sanitizeToId($name);
+        }
+
+        $generator = static::yieldingContentTag(
+            'label',
+            $content ?? Str::title(Str::slug($name)),
+            $options,
+            $yield,
+            $yield
+        );
+        yield from $generator;
+
+        return $generator->getReturn();
+    }
+
+    protected static function convertDirectUploadOptionToUrl($options) {
         if (Arr::pull($options, 'direct_upload') && method_exists(static::class, 'directUploadsUrl')) {
             $options['data-direct-upload-url'] = static::directUploadsUrl();
         }
@@ -245,11 +288,15 @@ trait FormTagHelper {
         return $options;
     }
 
-    private static function deleteSuffix($str, $suffix) {
+    protected static function deleteSuffix($str, $suffix) {
         return preg_replace('/' . $suffix . '$/', '', $str);
     }
 
-    private static function extraTagsForForm(&$options) {
+    protected static function directUploadsUrl() {
+        return null;
+    }
+
+    protected static function extraTagsForForm(&$options) {
         $csrf_token = Arr::pull($options, 'csrf_token');
         $method = strtolower(Arr::pull($options, 'method', 'post'));
 
@@ -281,7 +328,7 @@ trait FormTagHelper {
         return $tags;
     }
 
-    private static function htmlOptionsForForm($urlForOptions, $options) {
+    protected static function htmlOptionsForForm($urlForOptions, $options) {
         if (Arr::pull($options, 'multipart')) {
             $options['enctype'] = "multipart/form-data";
         }
@@ -307,11 +354,11 @@ trait FormTagHelper {
         return $options;
     }
 
-    private static function sanitizeToId($name) {
-        return preg_replace('/[^-a-zA-Z0-9:\.]/', '_', str_replace(']', '', $name));
+    protected static function sanitizeToId($name) {
+        return preg_replace('/[^-a-zA-Z0-9:\.]/', '_', str_replace(']', '', '' . $name));
     }
 
-    private static function methodTag($method) {
+    protected static function methodTag($method) {
         return static::tag('input', [
             'type' => 'hidden',
             'name' => '_method',
@@ -320,7 +367,7 @@ trait FormTagHelper {
         ], false, false);
     }
 
-    private static function tokenTag($token, $options) {
+    protected static function tokenTag($token, $options) {
         if (!static::$protectAgainstForgery) {
             return '';
         }
@@ -333,11 +380,11 @@ trait FormTagHelper {
         ], false, false);
     }
 
-    private static function utf8EnforcerTag() {
+    protected static function utf8EnforcerTag() {
         return new HtmlString('<input type="hidden" name="utf8" value="&#x2713;" autocomplete="off" />');
     }
 
-    private static function setDefaultDisableWith($value, &$options) {
+    protected static function setDefaultDisableWith($value, &$options) {
         $data = Arr::get($options, 'data', []);
 
         if (Arr::get($options, 'data-disable-with') === false || Arr::get($data, 'disable-with') === false) {

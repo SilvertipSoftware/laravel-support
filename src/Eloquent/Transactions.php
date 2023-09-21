@@ -83,6 +83,7 @@ trait Transactions {
         $this->exists = true;
 
         if (in_array(SoftDeletes::class, class_uses_recursive(static::class))) {
+            // @phpstan-ignore-next-line
             $this->{$this->getDeletedAtColumn()} = null;
         }
     }

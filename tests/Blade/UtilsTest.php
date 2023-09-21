@@ -2,10 +2,12 @@
 
 namespace Tests\Blade;
 
-use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\TestCase;
 use SilvertipSoftware\LaravelSupport\Blade\Utils;
 
 class UtilsTest extends TestCase {
+
+    protected $fn;
 
     public function setUp(): void {
         $this->fn = function () {

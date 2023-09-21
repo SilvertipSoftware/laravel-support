@@ -16,13 +16,6 @@ use Illuminate\Support\Facades\Route;
 trait FormHelperFixtures {
 
     protected function createFixtures() {
-        Route::resource('posts', '');
-        Route::resource('posts.comments', '');
-
-        Route::prefix('admin')->name('admin.')->group(function () {
-            Route::resource('posts', '');
-            Route::resource('posts.comments', '');
-        });
         Lang::setLocale('en');
         Lang::addLines(Arr::dot([
             'eloquent' => [
@@ -102,13 +95,25 @@ trait FormHelperFixtures {
         $this->post->tags = collect([new Tag()]);
 
         $this->car = new Car(['color' => '#000FFF']);
-
-        static::setContextVariables([
-            'car' => $this->car,
-            'post' => $this->post,
-            'post_delegator' => $this->postDelegator
-        ]);
     }
+
+    protected function defineRoutes($router) {
+        $router->resource('posts', '');
+        $router->resource('posts.comments', '');
+
+        $router->prefix('admin')->name('admin.')->group(function ($r) {
+            $r->resource('posts', '');
+            $r->resource('posts.comments', '');
+        });
+    }
+
+    // protected function getPackageProviders($app) {
+    //     return [
+    //         \Illuminate\Filesystem\FilesystemServiceProvider::class,
+    //         \Illuminate\Translation\TranslationServiceProvider::class,
+    //         \Illuminate\View\ViewServiceProvider::class,
+    //     ];
+    // }
 
     private function formText(
         $action = "/",
@@ -150,13 +155,12 @@ trait FormHelperFixtures {
         $content = $callback ? $callback() : '';
 
         $method = Arr::get($options, 'method');
-        $remote = Arr::get($options, 'remote');
+        $remote = Arr::get($options, 'remote', true);
         $multipart = Arr::get($options, 'multipart');
 
         return $this->formText($action, $id, $htmlClass, $remote, $multipart, $method)
             . $this->hiddenFields(Arr::only($options, ['method', 'enforce_utf8']))
             . $content
             . '</form>';
-
     }
 }

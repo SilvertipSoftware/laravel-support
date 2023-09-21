@@ -1,53 +1,58 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags\CollectionHelpers;
 
+use Generator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class Builder {
 
-    public $object;
-    public $text;
-    public $value;
-
-    protected $inputHtmlOptions;
-    protected $methodName;
-    protected $objectName;
-    protected $sanitizedAttributeName;
-    protected $templateObject;
-
     public function __construct(
-        $templateObject,
-        $objectName,
-        $methodName,
-        $object,
-        $sanitizedAttributeName,
-        $text,
-        $value,
-        $inputHtmlOptions
+        protected $templateObject,
+        protected $objectName,
+        protected $methodName,
+        public $object,
+        protected $sanitizedAttributeName,
+        public $text,
+        public $value,
+        protected $inputHtmlOptions
     ) {
-        $this->templateObject = $templateObject;
-        $this->objectName = $objectName;
-        $this->methodName = $methodName;
-        $this->object = $object;
-        $this->sanitizedAttributeName = $sanitizedAttributeName;
-        $this->text = $text;
-        $this->value = $value;
-        $this->inputHtmlOptions = $inputHtmlOptions;
     }
 
-    public function label($labelHtmlOptions = [], $block = null) {
-        $htmlOptions = array_merge(Arr::only($this->inputHtmlOptions, ['index', 'namespace']), $labelHtmlOptions);
+    public function label(array $labelHtmlOptions = [], ?callable $block = null): HtmlString {
+        $yield = $block != null;
+        $generator = $this->yieldingLabel($labelHtmlOptions, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block($obj->builder);
+            }
+        }
+
+        return $generator->getReturn();
+    }
+
+    public function yieldingLabel(array $labelHtmlOptions = [], bool $yield = true): Generator {
+        $htmlOptions = array_merge(
+            Arr::only($this->inputHtmlOptions, ['index', 'namespace']),
+            $labelHtmlOptions
+        );
+
         if (!Arr::get($htmlOptions, 'for') && Arr::get($this->inputHtmlOptions, 'id')) {
             $htmlOptions['for'] = Arr::get($this->inputHtmlOptions, 'id');
         }
 
-        return ($this->templateObject)::label(
+        $generator = ($this->templateObject)::yieldingLabel(
             $this->objectName,
             $this->sanitizedAttributeName,
             $this->text,
             $htmlOptions,
-            $block
+            $yield
         );
+        yield from $generator;
+
+        return $generator->getReturn();
     }
 }

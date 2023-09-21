@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
@@ -21,7 +23,7 @@ class Label extends Base {
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render($block = null) {
+    public function yieldingRender($yield = true) {
         $options = $this->options;
         $tagValue = Arr::pull($options, 'value');
         $nameAndId = $options;
@@ -40,8 +42,13 @@ class Label extends Base {
         }
 
         $builder = $this->makeLabelBuilder($tagValue);
-        if ($block) {
-            $content = $block($builder);
+        if ($yield) {
+            $obj = (object)[
+                'builder' => $builder,
+                'content' => ''
+            ];
+            yield $obj;
+            $content = $obj->content;
         } elseif ($this->content) {
             $content = $this->content;
         } else {

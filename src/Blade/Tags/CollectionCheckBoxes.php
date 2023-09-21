@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use SilvertipSoftware\LaravelSupport\Blade\Tags\CollectionHelpers\CheckBoxBuilder;
@@ -9,8 +11,11 @@ class CollectionCheckBoxes extends Base {
         CollectionHelpers::hiddenFieldName as originalHiddenFieldName;
     }
 
-    public function render($block) {
-        return $this->renderCollectionFor(CheckBoxBuilder::class, $block);
+    public function yieldingRender($yield) {
+        $generator = $this->yieldingRenderCollectionFor(CheckBoxBuilder::class, $yield);
+        yield from $generator;
+
+        return $generator->getReturn();
     }
 
     protected function renderComponent($builder) {

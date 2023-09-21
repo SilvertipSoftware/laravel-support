@@ -1,7 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
+use Closure;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 
@@ -43,11 +48,9 @@ trait CollectionHelpers {
             } elseif ($option === 'checked') {
                 $htmlOptions[$option] = false;
             }
-
-            $htmlOptions['object'] = $this->object;
-
-            return $htmlOptions;
         }
+
+        $htmlOptions['object'] = $this->object;
 
         return $htmlOptions;
     }
@@ -74,31 +77,59 @@ trait CollectionHelpers {
         );
     }
 
-    protected function renderCollection($renderFn) {
-        $pieces = collect($this->collection)->map(function ($item, $key) use ($renderFn) {
+    protected function yieldingRenderCollection() {
+        $pieces = [];
+        $collection = $this->collection;
+
+        if ($collection instanceof Builder || $collection instanceof EloquentBuilder) {
+            $collection = $collection->get();
+        }
+
+        foreach (collect($collection) as $key => $item) {
             $value = static::valueForCollection($item, $this->valueMethod, $key);
             $text = static::valueForCollection($item, $this->textMethod, $key);
             $defaultHtmlOptions = $this->defaultHtmlOptionsForCollection($item, $value);
             $additionalHtmlOptions = static::optionHtmlAttributes($item);
 
-            return $renderFn($item, $value, $text, array_merge($defaultHtmlOptions, $additionalHtmlOptions));
-        });
+            $obj = (object)[
+                'item' => $item,
+                'value' => $value,
+                'text' => $text,
+                'defaultHtmlOptions' => array_merge($defaultHtmlOptions, $additionalHtmlOptions),
+                'content' => ''
+            ];
+            yield $obj;
+            $pieces[] = $obj->content;
+        }
 
-        return new HtmlString(implode('', $pieces->all()));
+        return new HtmlString(implode('', $pieces));
     }
 
-    protected function renderCollectionFor($builderClass, $block) {
+    protected function yieldingRenderCollectionFor($builderClass, $yield) {
         $options = $this->options;
 
-        $renderFn = function ($item, $value, $text, $defaultHtmlOptions) use ($builderClass, $block) {
-            $builder = $this->instantiateBuilder($builderClass, $item, $value, $text, $defaultHtmlOptions);
+        $generator = $this->yieldingRenderCollection();
+        foreach ($generator as $obj) {
+            $builder = $this->instantiateBuilder(
+                $builderClass,
+                $obj->item,
+                $obj->value,
+                $obj->text,
+                $obj->defaultHtmlOptions
+            );
 
-            return $block
-                ? $block($builder)
-                : $this->renderComponent($builder);
-        };
-
-        $renderedCollection = $this->renderCollection($renderFn);
+            if ($yield) {
+                $obj2 = (object)[
+                    'builder' => $builder,
+                    'content' => ''
+                ];
+                yield $obj2;
+                $obj->content = $obj2->content;
+            } else {
+                $obj->content = $this->renderComponent($builder);
+            }
+        }
+        $renderedCollection = $generator->getReturn();
 
         if (Arr::get($options, 'include_hidden', true)) {
             return new HtmlString($this->hiddenField() . $renderedCollection);

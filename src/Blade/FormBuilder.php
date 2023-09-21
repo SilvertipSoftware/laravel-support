@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 use Illuminate\Support\Arr;
@@ -8,6 +10,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use RuntimeException;
+use SilvertipSoftware\LaravelSupport\Eloquent\Model;
 use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
 
 class FormBuilder {
@@ -20,7 +23,7 @@ class FormBuilder {
         'telephoneField', 'phoneField', 'dateField',
         'timeField', 'datetimeField', 'datetimeLocalField',
         'monthField', 'weekField', 'urlField', 'emailField',
-        'numberField', 'rangeField',
+        'numberField', 'rangeField'
     ];
 
     public $index;
@@ -50,9 +53,9 @@ class FormBuilder {
             ['skip_default_ids', 'allow_method_names_outside_object']
         );
 
-        if (preg_match('/\[\]$/', $this->objectName) === 1) {
+        if (preg_match('/\[\]$/', '' . $this->objectName) === 1) {
             $temp = preg_replace('/\[\]$/', '', $this->objectName);
-            $object = $object ?? $this->template->getContextVariable($temp);
+
             if (method_exists($object, 'getRouteKey')) {
                 $this->autoIndex = $object->getRouteKey();
             } else {
@@ -64,30 +67,15 @@ class FormBuilder {
         $this->index = Arr::get($options, 'index', Arr::get($options, 'child_index'));
     }
 
-    public function button($value, $options = [], $block = null) {
-        if (is_array($value)) {
-            $options = $value;
-            $value = null;
-        } elseif ($value instanceof Stringable) {
-            $opts = [
-                'name' => $this->fieldName($value->__toString()),
-                'id' => $this->fieldId($value->__toString())
-            ];
-            $options = array_merge($opts, $options);
-            $value = null;
+    public function button($value = null, $options = [], $block = null) {
+        $yield = $block != null;
+        $generator = $this->yieldingButton($value, $options, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block($obj->builder);
+            }
         }
-        $value = $value ?: $this->submitDefaultValue();
-
-        if ($block) {
-            $value = $block($value);
-        }
-
-        $formmethod = Arr::get($options, 'formmethod');
-        if ($formmethod && !preg_match('/post|get/i', $formmethod) && !Arr::has($options, 'name') && !Arr::has($options, 'value')) {
-            $options = array_merge($options, ['formmethod' => 'post', 'name' => '_method', 'value' => $formmethod]);
-        }
-
-        return ($this->template)::buttonTag($value, $options);
+        return $generator->getReturn();
     }
 
     public function checkBox($method, $options = [], $checkedValue = "1", $uncheckedValue = "0") {
@@ -175,52 +163,34 @@ class FormBuilder {
         return ($this->template)::fieldName($objectName, $method, (array)$otherNames, $multiple, $index);
     }
 
+    public function fields($scope = null, $model = null, $options = [], $block = null) {
+        if (!$block) {
+            throw new RuntimeException('FormBuilder::fields requires a block');
+        }
+
+        $generator = $this->yieldingFields($scope, $model, $options);
+        foreach ($generator as $obj) {
+            $obj->content = $block($obj->builder);
+        }
+
+        return $generator->getReturn();
+    }
+
     public function fieldsFor($recordName, $recordObject = null, $fieldsOptions = [], $block = null) {
         if (!is_callable($block)) {
             throw new RuntimeException('fieldsFor requires a callback');
         }
 
-        if (is_array($recordObject) && Arr::isAssoc($recordObject)) {
-            $fieldsOptions = $recordObject;
-            $recordObject = null;
-        }
-        $fieldsOptions['builder'] = Arr::get($fieldsOptions, 'builder', $this->options['builder'] ?? null);
-        $fieldsOptions['namespace'] = Arr::get($fieldsOptions, 'namespace', $this->options['namespace'] ?? null);
-        $fieldsOptions['parent_builder'] = $this;
-
-        if (is_string($recordName)) {
-            if ($this->isNestedAttributesRelation($recordName)) {
-                return $this->fieldsForWithNestedAttributes($recordName, $recordObject, $fieldsOptions, $block);
-            }
-        } else {
-            $recordObject = ($this->template)::objectForFormBuilder($recordName);
-            $recordName = static::modelNameFrom($recordObject)->param_key;
+        $generator = $this->yieldingFieldsFor($recordName, $recordObject, $fieldsOptions);
+        foreach ($generator as $obj) {
+            $obj->content = $block($obj->builder);
         }
 
-        $objectName = $this->objectName;
-        $this->index = null;
-        if (Arr::has($this->options, 'index')) {
-            $this->index = $this->options['index'];
-        } elseif (!empty($this->autoIndex)) {
-            $objectName = preg_replace('/\[\]$/', '', $objectName);
-            $this->index = $this->autoIndex;
-        }
-
-        if ($this->index !== null) {
-            $recordName = $objectName . '[' . $this->index . '][' . $recordName . ']';
-        } elseif (preg_match('/\[\]$/', $recordName)) {
-            $recordName = $objectName . '[' . substr($recordName, 0, -2) . ']'
-                . '[' . $recordObject->getKey() . ']';
-        } else {
-            $recordName = $objectName . '[' . $recordName . ']';
-        }
-        $fieldsOptions['child_index'] = $this->index;
-
-        return ($this->template)::fieldsFor($recordName, $recordObject, $fieldsOptions, $block);
+        return $generator->getReturn();
     }
 
     public function fileField($method, $options = []) {
-        $this->setMultipart(true);
+        $this->setIsMultipart(true);
 
         return ($this->template)::fileField($this->objectName, $method, $this->objectifyOptions($options));
     }
@@ -261,7 +231,15 @@ class FormBuilder {
     }
 
     public function label($method, $text = null, $options = [], $block = null) {
-        return ($this->template)::label($this->objectName, $method, $text, $this->objectifyOptions($options), $block);
+        $yield = $block != null;
+        $generator = $this->yieldingLabel($method, $text, $options, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block($obj->builder);
+            }
+        }
+
+        return $generator->getReturn();
     }
 
     public function radioButton($method, $tagValue, $options = []) {
@@ -277,6 +255,14 @@ class FormBuilder {
             array_merge($this->defaultHtmlOptions, $htmlOptions),
             $block
         );
+    }
+
+    public function setIsMultipart($value) {
+        $this->isMultipart = $value;
+
+        if ($parentBuilder = Arr::get($this->options, 'parent_builder')) {
+            $parentBuilder->setIsMultipart($value);
+        }
     }
 
     public function submit($value = null, $options = []) {
@@ -320,70 +306,6 @@ class FormBuilder {
         );
     }
 
-    protected function fieldsForNestedModel($name, $object, $fieldsOptions, $block) {
-        $object = static::convertToModel($object);
-        $emitHiddenId = $object->exists
-            && Arr::get($fieldsOptions, 'include_id', Arr::get($options, 'include_id', true));
-
-        return ($this->template)::fieldsFor($name, $object, $fieldsOptions, function ($f) use ($block, $emitHiddenId) {
-            $output = $block($f);
-
-            if ($output && $emitHiddenId && !$f->emittedHiddenId) {
-                $output .= ($this->template)::hiddenField('id');
-            }
-
-            return $output;
-        });
-    }
-
-    protected function fieldsForWithNestedAttributes($associationName, $association, $options, $block) {
-        $name = $this->objectName . '[' . $associationName . '_attributes]';
-        $association = static::convertToModel($association);
-
-        if ($association instanceof Model) {
-            $relationClass = get_class($this->object->{$associationName}());
-            if (($this->template)::isManyRelation($relationClass)) {
-                $association = [$association];
-            }
-        } elseif (!(is_array($association) || $association instanceof Collection)) {
-            $association = $this->object->{$associationName};
-        }
-
-        if ($association instanceof Collection) {
-            $association = $association->all();
-        }
-
-        if (is_array($association)) {
-            $explicitChildIndex = Arr::get($options, 'child_index');
-            $buffer = '';
-
-            foreach ($association as $index => $child) {
-                if ($explicitChildIndex) {
-                    if (is_callable($explicitChildIndex)) {
-                        $options['child_index'] = $explicitChildIndex();
-                    }
-                } else {
-                    $options['child_index'] = $this->nestedChildIndex($name);
-                }
-
-                $content = $this->fieldsForNestedModel(
-                    $name . '[' . Arr::get($options, 'child_index') . ']',
-                    $child,
-                    $options,
-                    $block
-                );
-
-                if ($content) {
-                    $buffer .= $content;
-                }
-            }
-
-            return new HtmlString($buffer);
-        } else {
-            return $this->fieldsForNestedModel($name, $association, $options, $block);
-        }
-    }
-
     protected function isNestedAttributesRelation($name) {
         return (method_exists($this->object, 'isNestedAttribute') && $this->object->isNestedAttribute($name))
             || method_exists($this->object, 'set' . Str::studly($name) . 'Attributes');
@@ -399,6 +321,7 @@ class FormBuilder {
     protected function objectifyOptions($options) {
         $result = array_merge($this->defaultOptions, $options);
         $result['object'] = $this->object;
+
         return $result;
     }
 
@@ -422,5 +345,194 @@ class FormBuilder {
         $fallback = StrUtils::humanize($key) . ' ' . $model;
 
         return StrUtils::translate($possibleKeys, $fallback);
+    }
+
+    public function yieldingButton($value = null, $options = [], $yield = true) {
+        if (is_array($value)) {
+            $options = $value;
+            $value = null;
+        } elseif ($value instanceof Stringable) {
+            $opts = [
+                'name' => $this->fieldName($value->__toString()),
+                'id' => $this->fieldId($value->__toString())
+            ];
+            $options = array_merge($opts, $options);
+            $value = null;
+        }
+        $value = $value ?: $this->submitDefaultValue();
+
+        if ($yield) {
+            $obj = (object)[
+                'builder' => $value,
+                'content' => ''
+            ];
+            yield $obj;
+            $value = new HtmlString($obj->content);
+        }
+
+        $formmethod = Arr::get($options, 'formmethod');
+        if ($formmethod
+            && !preg_match('/post|get/i', $formmethod)
+            && !Arr::has($options, 'name')
+            && !Arr::has($options, 'value')
+        ) {
+            $options = array_merge($options, ['formmethod' => 'post', 'name' => '_method', 'value' => $formmethod]);
+        }
+
+        return ($this->template)::buttonTag($value, $options);
+    }
+
+    public function yieldingLabel($method, $text = null, $options = [], $yield = true) {
+        $generator = ($this->template)::yieldingLabel(
+            $this->objectName,
+            $method,
+            $text,
+            $this->objectifyOptions($options),
+            $yield
+        );
+        yield from $generator;
+        return $generator->getReturn();
+    }
+
+    public function yieldingFields($scope = null, $model = null, $options = []) {
+        $options['allow_method_names_outside_object'] = true;
+        $options['skip_default_ids'] = ($this->template)::$formWithGeneratesIds;
+
+        $generator = $this->yieldingFieldsFor($scope ?: $model, $model, $options);
+        yield from $generator;
+
+        return $generator->getReturn();
+    }
+
+    public function yieldingFieldsFor($recordName, $recordObject = null, $fieldsOptions = []) {
+        if (is_array($recordObject) && Arr::isAssoc($recordObject)) {
+            $fieldsOptions = $recordObject;
+            $recordObject = null;
+        }
+        $fieldsOptions['builder'] = Arr::get($fieldsOptions, 'builder', $this->options['builder'] ?? null);
+        $fieldsOptions['namespace'] = Arr::get($fieldsOptions, 'namespace', $this->options['namespace'] ?? null);
+        $fieldsOptions['parent_builder'] = $this;
+
+        if (is_string($recordName)) {
+            if ($this->isNestedAttributesRelation($recordName)) {
+                $generator = $this->yieldingFieldsForWithNestedAttributes($recordName, $recordObject, $fieldsOptions);
+                yield from $generator;
+                return $generator->getReturn();
+            }
+        } else {
+            $recordObject = ($this->template)::objectForFormBuilder($recordName);
+            $recordName = static::modelNameFrom($recordObject)->param_key;
+        }
+
+        $objectName = $this->objectName;
+        $this->index = null;
+        if (Arr::has($this->options, 'index')) {
+            $this->index = $this->options['index'];
+        } elseif (!empty($this->autoIndex)) {
+            $objectName = preg_replace('/\[\]$/', '', $objectName);
+            $this->index = $this->autoIndex;
+        }
+
+        if ($this->index !== null) {
+            $recordName = $objectName . '[' . $this->index . '][' . $recordName . ']';
+        } elseif (preg_match('/\[\]$/', $recordName)) {
+            $recordName = $objectName . '[' . substr($recordName, 0, -2) . ']'
+                . '[' . $recordObject->getKey() . ']';
+        } else {
+            $recordName = $objectName . '[' . $recordName . ']';
+        }
+        $fieldsOptions['child_index'] = $this->index;
+
+        $generator = ($this->template)::yieldingFieldsFor($recordName, $recordObject, $fieldsOptions);
+        yield from $generator;
+
+        return $generator->getReturn();
+    }
+
+    protected function yieldingFieldsForNestedModel($name, $object, $fieldsOptions) {
+        $object = static::convertToModel($object);
+        $emitHiddenId = $object && $object->exists
+            && Arr::get($fieldsOptions, 'include_id', Arr::get($this->options, 'include_id', true));
+
+        $fn = function ($f) use ($emitHiddenId) {
+            $obj = (object)[
+                'builder' => $f,
+                'content' => null
+            ];
+            yield $obj;
+            $output = $obj->content;
+
+            if ($output && $emitHiddenId && !$f->emittedHiddenId) {
+                $output .= ($this->template)::hiddenField('id');
+            }
+
+            return $output;
+        };
+
+        $generator = ($this->template)::yieldingFieldsFor($name, $object, $fieldsOptions);
+        foreach ($generator as $obj) {
+            $obj2 = (object)[
+                'builder' => $obj->builder,
+                'content' => null
+            ];
+            yield $obj2;
+            $obj->content = $obj2->content;
+        }
+
+        return $generator->getReturn();
+    }
+
+    protected function yieldingFieldsForWithNestedAttributes($associationName, $association, $options) {
+        $name = $this->objectName . '[' . $associationName . '_attributes]';
+        $association = static::convertToModel($association);
+
+        if ($association instanceof Model) {
+            if (method_exists($this->object, $associationName)) {
+                $relationClass = get_class($this->object->{$associationName}());
+                if (($this->template)::isManyRelation($relationClass)) {
+                    $association = [$association];
+                }
+            }
+        } elseif (!(is_array($association) || $association instanceof Collection)) {
+            $association = $this->object->{$associationName};
+        }
+
+        if ($association instanceof Collection) {
+            $association = $association->all();
+        }
+
+        if (is_array($association)) {
+            $explicitChildIndex = Arr::get($options, 'child_index');
+            $buffer = '';
+
+            foreach ($association as $index => $child) {
+                if ($explicitChildIndex) {
+                    if (is_callable($explicitChildIndex)) {
+                        $options['child_index'] = $explicitChildIndex();
+                    }
+                } else {
+                    $options['child_index'] = $this->nestedChildIndex($name);
+                }
+
+                $generator = $this->yieldingFieldsForNestedModel(
+                    $name . '[' . Arr::get($options, 'child_index') . ']',
+                    $child,
+                    $options,
+                );
+                yield from $generator;
+                $content = $generator->getReturn();
+
+                if ($content) {
+                    $buffer .= $content;
+                }
+            }
+
+            return new HtmlString($buffer);
+        } else {
+            $generator = $this->yieldingFieldsForNestedModel($name, $association, $options);
+            yield from $generator;
+
+            return $generator->getReturn();
+        }
     }
 }

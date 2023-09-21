@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 trait ModelUtils {
@@ -46,6 +48,6 @@ trait ModelUtils {
             'BelongsToMany', 'HasMany', 'HasManyThrough', 'MorphMany', 'MorphToMany'
         ];
 
-        return in_array($base, static::$relationsReturningCollections);
+        return in_array($base, $relationsReturningCollections);
     }
 }

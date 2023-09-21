@@ -2,7 +2,7 @@
 
 namespace Tests\Blade;
 
-use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\TestCase;
 use SilvertipSoftware\LaravelSupport\Blade\FormTagHelper;
 use Tests\TestSupport\HtmlAssertions;
 
@@ -11,6 +11,7 @@ class ButtonsTagTest extends TestCase {
         FormTagHelper;
 
     public function tearDown(): void {
+        parent::tearDown();
         static::$automaticallyDisableSubmitTag = true;
     }
 

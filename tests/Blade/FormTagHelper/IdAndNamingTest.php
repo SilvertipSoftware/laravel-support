@@ -3,7 +3,7 @@
 namespace Tests\Blade;
 
 use Illuminate\Support\HtmlString;
-use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\TestCase;
 use SilvertipSoftware\LaravelSupport\Blade\FormTagHelper;
 use Tests\TestSupport\HtmlAssertions;
 

@@ -31,6 +31,10 @@ class Model extends EloquentModel {
         return $this;
     }
 
+    public function toParam() {
+        return $this->getKey();
+    }
+
     protected function processRollback() {
         $this->rollbackSelfAndAutosavedRelations();
     }

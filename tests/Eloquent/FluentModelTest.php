@@ -7,6 +7,8 @@ require_once __DIR__ . '/../models/Device.php';
 
 class FluentModelTest extends TestCase {
 
+    protected $device;
+
     public function setUp(): void {
         $this->device = new Device([
             'model' => 'iPhone',

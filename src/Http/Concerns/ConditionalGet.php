@@ -26,11 +26,8 @@ trait ConditionalGet {
         $modified = null;
 
         if (is_object($object)) {
-            try {
-                $modified = $object->updated_at ?: null;
-            } catch (Exception $ex) {
-                // Collection throws exception for some reason...
-            }
+            $modified = $object->updated_at ?: null;
+
             if (!$modified && (method_exists($object, 'max') || $object instanceof Builder)) {
                 $modified = $object->max('updated_at');
             }

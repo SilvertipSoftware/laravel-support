@@ -2,7 +2,7 @@
 
 namespace Tests\Blade;
 
-use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\TestCase;
 use SilvertipSoftware\LaravelSupport\Blade\FormTagHelper;
 use Tests\TestSupport\HtmlAssertions;
 

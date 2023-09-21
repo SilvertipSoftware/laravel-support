@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 use Illuminate\Support\Arr;
@@ -8,21 +10,47 @@ use Illuminate\Support\Str;
 
 class TagBuilder {
 
-    protected $helper;
+    protected const BOOLEAN_ATTRIBUTES = [
+        'allowfullscreen', 'allowpaymentrequest', 'async', 'autofocus',
+        'autoplay', 'checked', 'compact', 'controls', 'declare', 'default',
+        'defaultchecked', 'defaultmuted', 'defaultselected', 'defer',
+        'disabled', 'enabled', 'formnovalidate', 'hidden', 'indeterminate',
+        'inert', 'ismap', 'itemscope', 'loop', 'multiple', 'muted', 'nohref',
+        'nomodule', 'noresize', 'noshade', 'novalidate', 'nowrap', 'open',
+        'pauseonexit', 'playsinline', 'readonly', 'required', 'reversed',
+        'scoped', 'seamless', 'selected', 'sortable', 'truespeed',
+        'typemustmatch', 'visible',
+    ];
 
-    public function __construct($helper) {
-        $this->helper = $helper;
+    protected const ARIA_PREFIXES = ['aria'];
+    protected const DATA_PREFIXES = ['data', 'v'];
+
+    protected const PRE_CONTENT_STRINGS = [
+        'textarea' => "\n"
+    ];
+
+    protected const VOID_ELEMENTS = [
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+        'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
+    ];
+
+    protected const SVG_SELF_CLOSING_ELEMENTS = [
+        'animate', 'animateMotion', 'animateTransform', 'circle', 'ellipse',
+        'line', 'path', 'polygon', 'polyline', 'rect', 'set', 'stop', 'use', 'view'
+    ];
+
+    public function __construct(protected string $helper) {
     }
 
-    public function attributes($attributes) {
+    public function attributes(array $attributes): HtmlString {
         return new HtmlString(trim($this->tagOptions($attributes)));
     }
 
-    public function p($content = null, $options = []) {
+    public function p(string|array|null $content = null, array $options = []): HtmlString {
         return $this->tagString('p', $content, $options);
     }
 
-    public function tagString($name, $content = null, $options = [], $callback = null) {
+    public function tagString(string $name, $content = null, $options = [], $callback = null): HtmlString {
         list($content, $options, $callback) = Utils::determineTagArgs($content, $options, $callback);
         $options = $options ?? [];
         $mustEscape = Arr::pull($options, 'escape', true);
@@ -44,7 +72,7 @@ class TagBuilder {
         }
     }
 
-    public function contentTagString($name, $content, $options, $mustEscape = true) {
+    public function contentTagString(string $name, $content, $options, $mustEscape = true): HtmlString {
         $tagOptions = $this->tagOptions($options, $mustEscape);
 
         if ($mustEscape) {
@@ -53,7 +81,15 @@ class TagBuilder {
         }
 
         // Remove new lines and carriage returns.
-        $content = str_replace(["\n", "\r"], "&#10;", str_replace(["\r\n", "\n\r"], "\n", $content));
+        $content = str_replace(
+            ["\n", "\r"],
+            "&#10;",
+            str_replace(
+                ["\r\n", "\n\r"],
+                "\n",
+                $content ? ('' . $content) : ''
+            )
+        );
 
         return new HtmlString(
             '<' . $name . $tagOptions . '>'
@@ -62,7 +98,7 @@ class TagBuilder {
         );
     }
 
-    public function tagOptions($options, $mustEscape = true) {
+    public function tagOptions(?array $options, bool $mustEscape = true): ?string {
         if (empty($options)) {
             return null;
         }
@@ -102,11 +138,11 @@ class TagBuilder {
         return $output;
     }
 
-    public function booleanTagOption($key) {
+    public function booleanTagOption(string $key): string {
         return $key . '="' . $key . '"';
     }
 
-    public function tagOption($key, $value, $mustEscape) {
+    public function tagOption(string $key, $value, $mustEscape): string {
         $key = $mustEscape ? Utils::xmlNameEscape($key) : $key;
         if (is_array($value)) {
             if ($key == 'class') {
@@ -118,14 +154,14 @@ class TagBuilder {
         } elseif (is_bool($value)) {
             $value = $value ? 'true' : 'false';
         } else {
-            $value = $mustEscape ? e($value) : $value;
+            $value = $mustEscape ? e($value) : ('' . $value);
         }
 
         $value = preg_replace('/"/', '&quot;', $value);
         return $key . '="' . $value . '"';
     }
 
-    protected function prefixTagOption($prefix, $key, $value, $mustEscape) {
+    protected function prefixTagOption(string $prefix, string $key, $value, $mustEscape): string {
         $key = $prefix . '-' . self::dasherize($key);
         if (!(is_string($value) || is_numeric($value) || $value instanceof HtmlString)) {
             $value = json_encode($value);
@@ -142,36 +178,7 @@ class TagBuilder {
         return $this->tagString($attr);
     }
 
-    protected static function dasherize($str) {
+    protected static function dasherize(string $str): string {
         return str_replace('_', '-', $str);
     }
-
-    private const BOOLEAN_ATTRIBUTES = [
-        'allowfullscreen', 'allowpaymentrequest', 'async', 'autofocus',
-        'autoplay', 'checked', 'compact', 'controls', 'declare', 'default',
-        'defaultchecked', 'defaultmuted', 'defaultselected', 'defer',
-        'disabled', 'enabled', 'formnovalidate', 'hidden', 'indeterminate',
-        'inert', 'ismap', 'itemscope', 'loop', 'multiple', 'muted', 'nohref',
-        'nomodule', 'noresize', 'noshade', 'novalidate', 'nowrap', 'open',
-        'pauseonexit', 'playsinline', 'readonly', 'required', 'reversed',
-        'scoped', 'seamless', 'selected', 'sortable', 'truespeed',
-        'typemustmatch', 'visible',
-    ];
-
-    private const ARIA_PREFIXES = ['aria'];
-    private const DATA_PREFIXES = ['data', 'v'];
-
-    private const PRE_CONTENT_STRINGS = [
-        'textarea' => "\n"
-    ];
-
-    private const VOID_ELEMENTS = [
-        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
-        'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
-    ];
-
-    private const SVG_SELF_CLOSING_ELEMENTS = [
-        'animate', 'animateMotion', 'animateTransform', 'circle', 'ellipse',
-        'line', 'path', 'polygon', 'polyline', 'rect', 'set', 'stop', 'use', 'view'
-    ];
 }

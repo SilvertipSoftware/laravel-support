@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Libs\StrongParameters;
 
 use ArrayAccess;
@@ -13,7 +15,7 @@ class Parameters implements Arrayable, ArrayAccess {
     protected $permitted = false;
     protected $convertedArrays = [];
 
-    public function __construct(array $params = []) {
+    final public function __construct(array $params = []) {
         $this->params = $params;
     }
 
@@ -21,11 +23,11 @@ class Parameters implements Arrayable, ArrayAccess {
         return $this->permitted;
     }
 
-    public function offsetExists(mixed $offset) {
+    public function offsetExists(mixed $offset): bool {
         return array_key_exists($offset, $this->params);
     }
 
-    public function offsetGet(mixed $offset) {
+    public function offsetGet(mixed $offset): mixed {
         if (!array_key_exists($offset, $this->params)) {
             return null;
         }
@@ -33,7 +35,7 @@ class Parameters implements Arrayable, ArrayAccess {
         return $this->convertHashesToParameters($offset, $this->params[$offset]);
     }
 
-    public function offsetSet(mixed $offset, mixed $value) {
+    public function offsetSet(mixed $offset, mixed $value): void {
         $this->params[$offset] = $value;
     }
 
@@ -45,7 +47,7 @@ class Parameters implements Arrayable, ArrayAccess {
         $this->offsetSet($offset, $value);
     }
 
-    public function offsetUnset(mixed $offset) {
+    public function offsetUnset(mixed $offset): void {
         unset($this->params[$offset]);
     }
 

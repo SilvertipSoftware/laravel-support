@@ -7,12 +7,17 @@ use Illuminate\Support\HtmlString;
 
 trait HtmlAssertions {
 
-    protected function assertDomEquals($expected, $actual) {
+    protected function assertDomEquals($expected, $actual, $stripNewLines = false) {
         if ($expected instanceof HtmlString) {
             $expected = $expected->toHtml();
         }
         if ($actual instanceof HtmlString) {
             $actual = $actual->toHtml();
+        }
+
+        if ($stripNewLines) {
+            $expected = trim(str_replace(["&#10;", "\n"], '', $expected));
+            $actual = trim(str_replace(["&#10;", "\n"], '', $actual));
         }
 
         $expDoc = new DOMDocument();
@@ -21,8 +26,8 @@ trait HtmlAssertions {
         $this->assertTrue($expDoc->loadHtml($expected) && $actDoc->loadHtml($actual));
 
         $this->assertEquals(
-            $expDoc->C14N(),
-            $actDoc->C14N()
+            $expDoc->getElementsByTagName('body')->item(0)->C14N(),
+            $actDoc->getElementsByTagName('body')->item(0)->C14N()
         );
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 class Utils {
@@ -11,7 +13,7 @@ class Utils {
     const TAG_NAME_FOLLOWING_REGEXP = "/[^SUB\-.0-9\x{B7}\u{0300}-\u{036F}\u{203F}-\u{2040}]/";
     const TAG_NAME_REPLACEMENT_CHAR = '_';
 
-    public static function xmlNameEscape($name) {
+    public static function xmlNameEscape(?string $name): string {
         if (empty($name)) {
             return '';
         }
@@ -35,7 +37,7 @@ class Utils {
         return $startingChar . $followingCharacters;
     }
 
-    public static function determineTagArgs(...$args) {
+    public static function determineTagArgs(...$args): array {
         $lastIx = count($args) - 1;
 
         // ensure first is not an array

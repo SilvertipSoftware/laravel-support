@@ -23,6 +23,18 @@ class DatabaseTestCase extends TestCase {
         $this->assertCount($num, $this->queries);
     }
 
+    protected function getApplicationProviders($app) {
+        return [
+            \Illuminate\Cache\CacheServiceProvider::class,
+            \Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+            \Illuminate\Database\DatabaseServiceProvider::class,
+            \Illuminate\Filesystem\FilesystemServiceProvider::class,
+            \Illuminate\Queue\QueueServiceProvider::class,
+            \Illuminate\Translation\TranslationServiceProvider::class,
+            \Illuminate\Validation\ValidationServiceProvider::class,
+        ];
+    }
+
     protected function getEnvironmentSetUp($app) {
         $app['config']->set('database.default', 'testbench');
         $app['config']->set('database.connections.testbench', [

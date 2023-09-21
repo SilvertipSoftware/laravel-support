@@ -761,9 +761,6 @@ class FormOptionsHelperTest extends TestCase {
     public function testSelect() {
         $post = new Post();
         $post->category = '<mus>';
-        static::setContextVariables([
-            'post' => $post
-        ]);
 
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="abe">abe</option>' . "\n"
@@ -773,7 +770,7 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['object' => $post])
         );
     }
 
@@ -807,10 +804,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithGroupedCollectionAsNestedArray() {
         $post = new Post();
-        static::setContextVariables([
-            'post' => $post
-        ]);
-
         $countriesByContinent = [
             ['<Africa>', [['<South Africa>', '<sa>'], ['Somalia', 'so']]],
             ['Europe', [['Denmark', 'dk'], ['Ireland', 'ie']]]
@@ -831,10 +824,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithGroupedCollectionAsHash() {
         $post = new Post();
-        static::setContextVariables([
-            'post' => $post
-        ]);
-
         $countriesByContinent = [
             '<Africa>' => [['<South Africa>', '<sa>'], ['Somalia', 'so']],
             'Europe' => [['Denmark', 'dk'], ['Ireland', 'ie']]
@@ -855,10 +844,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithGroupedCollectionAsNestedArrayAndHtmlAttributes() {
         $post = new Post();
-        static::setContextVariables([
-            'post' => $post
-        ]);
-
         $countriesByContinent = [
             ['<Africa>', [['<South Africa>', '<sa>'], ['Somalia', 'so']], ['data' => ['foo' => 'bar']]],
             ['Europe', [['Denmark', 'dk'], ['Ireland', 'ie']], ['disabled' => 'disabled']]
@@ -874,15 +859,16 @@ class FormOptionsHelperTest extends TestCase {
             . '<option value="ie">Ireland</option>'
             . '</optgroup></select>';
 
-        $this->assertDomEquals($expected, static::select('post', 'origin', $countriesByContinent));
+        $this->assertDomEquals(
+            $expected,
+            static::select('post', 'origin', $countriesByContinent, ['object' => $post])
+        );
     }
 
     public function testSelectWithBooleanProperty() {
         $post = new Post();
         $post->allow_comments = false;
-        static::setContextVariables([
-            'post' => $post
-        ]);
+
         $expected = '<select id="post_allow_comments" name="post[allow_comments]">'
             . '<option value="true">true</option>' . "\n"
             . '<option value="false" selected="selected">false</option>'
@@ -890,16 +876,13 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'allow_comments', ['true', 'false'])
+            static::select('post', 'allow_comments', ['true', 'false'], ['object' => $post])
         );
     }
 
     public function testSelectUnderFieldsFor() {
         $post = new Post();
         $post->category = '<mus>';
-        static::setContextVariables([
-            'post' => $post
-        ]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->select('category', ['abe', '<mus>', 'hest']);
@@ -916,9 +899,6 @@ class FormOptionsHelperTest extends TestCase {
     public function testSelectUnderFieldsForWithIndex() {
         $post = new Post();
         $post->category = '<mus>';
-        static::setContextVariables([
-            'post' => $post
-        ]);
 
         $rendered = static::fieldsFor('post', $post, ['index' => 108], function ($f) {
             return $f->select('category', ['abe', '<mus>', 'hest']);
@@ -934,9 +914,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectUnderFieldsForWithAutoIndex() {
         $post = new Post(['id' => 108, 'category' => '<mus>']);
-        static::setContextVariables([
-            'post' => $post
-        ]);
 
         $rendered = static::fieldsFor('post[]', $post, [], function ($f) {
             return $f->select('category', ['abe', '<mus>', 'hest']);
@@ -952,9 +929,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectUnderFieldsForWithStringAndGivenPrompt() {
         $post = new Post();
-        static::setContextVariables([
-            'post' => $post
-        ]);
 
         $options = new HtmlString('<option value="abe">abe</option>'
             . '<option value="mus">mus</option>'
@@ -972,7 +946,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectUnderFieldsForWithBlock() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->select('category', null, [], [], function () {
@@ -989,7 +962,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectUnderFieldsForWithBlockWithoutOptions() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->select('category', null, [], [], function () {
@@ -1042,7 +1014,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithBlank() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
 
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="" label=" "></option>' . "\n"
@@ -1053,27 +1024,25 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['include_blank' => true])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['include_blank' => true, 'object' => $post])
         );
     }
 
     public function testSelectWithIncludeBlankFalseAndRequired() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
 
         $this->expectException(RuntimeException::class);
         static::select(
             'post',
             'category',
             ['abe', '<mus>', 'hest'],
-            ['include_blank' => false],
+            ['include_blank' => false, 'object' => $post],
             ['required' => 'required']
         );
     }
 
     public function testSelectWithBlankAsString() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
 
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">None</option>' . "\n"
@@ -1084,13 +1053,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['include_blank' => 'None'])
+            static::select(
+                'post',
+                'category',
+                ['abe', '<mus>', 'hest'],
+                ['include_blank' => 'None', 'object' => $post]
+            )
         );
     }
 
     public function testSelectWithBlankAsStringEscaped() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
 
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">&lt;None&gt;</option>' . "\n"
@@ -1101,13 +1074,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['include_blank' => '<None>'])
+            static::select(
+                'post',
+                'category',
+                ['abe', '<mus>', 'hest'],
+                ['include_blank' => '<None>', 'object' => $post]
+            )
         );
     }
 
     public function testSelectWithDefaultPrompt() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">Please select</option>' . "\n"
             . '<option value="abe">abe</option>' . "\n"
@@ -1117,13 +1094,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => true])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => true, 'object' => $post])
         );
     }
 
     public function testSelectNoPromptWhenSelectHasValue() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="abe">abe</option>' . "\n"
             . '<option value="&lt;mus&gt;" selected="selected">&lt;mus&gt;</option>' . "\n"
@@ -1132,13 +1108,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => true])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => true, 'object' => $post])
         );
     }
 
     public function testSelectWithGivenPrompt() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">The prompt</option>' . "\n"
             . '<option value="abe">abe</option>' . "\n"
@@ -1148,13 +1123,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => 'The prompt'])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => 'The prompt', 'object' => $post])
         );
     }
 
     public function testSelectWithGivenPromptEscaped() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">&lt;The prompt&gt;</option>' . "\n"
             . '<option value="abe">abe</option>' . "\n"
@@ -1164,13 +1138,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => '<The prompt>'])
+            static::select(
+                'post',
+                'category',
+                ['abe', '<mus>', 'hest'],
+                ['prompt' => '<The prompt>', 'object' => $post]
+            )
         );
     }
 
     public function testSelectWithPromptAndBlank() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">Please select</option>' . "\n"
             . '<option value="" label=" "></option>' . "\n"
@@ -1181,13 +1159,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['prompt' => true, 'include_blank' => true])
+            static::select(
+                'post',
+                'category',
+                ['abe', '<mus>', 'hest'],
+                ['prompt' => true, 'include_blank' => true, 'object' => $post]
+            )
         );
     }
 
     public function testSelectWithEmpty() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">Please select</option>' . "\n"
             . '<option value="" label=" "></option>' . "\n"
@@ -1195,13 +1177,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', [], ['prompt' => true, 'include_blank' => true])
+            static::select('post', 'category', [], ['prompt' => true, 'include_blank' => true, 'object' => $post])
         );
     }
 
     public function testSelectWithHtmlOptions() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select class="disabled" disabled="disabled" id="post_category" name="post[category]">'
             . '<option value="">Please select</option>' . "\n"
             . '<option value="" label=" "></option>' . "\n"
@@ -1213,7 +1194,7 @@ class FormOptionsHelperTest extends TestCase {
                 'post',
                 'category',
                 [],
-                ['prompt' => true, 'include_blank' => true],
+                ['prompt' => true, 'include_blank' => true, 'object' => $post],
                 ['class' => 'disabled', 'disabled' => true]
             )
         );
@@ -1221,7 +1202,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithNull() {
         $post = new Post(['category' => 'othervalue']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value=""></option>' . "\n"
             . '<option value="othervalue" selected="selected">othervalue</option>'
@@ -1229,13 +1209,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', [null, "othervalue"])
+            static::select('post', 'category', [null, "othervalue"], ['object' => $post])
         );
     }
 
     public function testSelectWithNullAsSelectedValue() {
         $post = new Post(['category' => null]);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option selected="selected" value="">none</option>' . "\n"
             . '<option value="1">programming</option>' . "\n"
@@ -1244,13 +1223,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['none' => null, 'programming' => 1, 'economics' => 2])
+            static::select(
+                'post',
+                'category',
+                ['none' => null, 'programming' => 1, 'economics' => 2],
+                ['object' => $post]
+            )
         );
     }
 
     public function testSelectWithNullAndSelectedOptionAsNUll() {
         $post = new Post(['category' => null]);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">none</option>' . "\n"
             . '<option value="1">programming</option>' . "\n"
@@ -1263,14 +1246,13 @@ class FormOptionsHelperTest extends TestCase {
                 'post',
                 'category',
                 ['none' => null, 'programming' => 1, 'economics' => 2],
-                ['selected' => null]
+                ['selected' => null, 'object' => $post]
             )
         );
     }
 
     public function testSelectWithArray() {
         $continent = new Continent(['countries' => ['Denmark', 'Sweden']]);
-        static::setContextVariables(['continent' => $continent]);
 
         $expected = '<select name="continent[countries]" id="continent_countries">'
             . '<option selected="selected" value="Denmark">Denmark</option>' . "\n"
@@ -1280,7 +1262,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('continent', 'countries', ['Denmark', 'Sweden', 'Canada'], ['multiple' => true])
+            static::select(
+                'continent',
+                'countries',
+                ['Denmark', 'Sweden', 'Canada'],
+                ['multiple' => true, 'object' => $continent]
+            )
         );
     }
 
@@ -1348,7 +1335,13 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', 'mus', 'hest'], [], ['required' => true, 'size' => 1])
+            static::select(
+                'post',
+                'category',
+                ['abe', 'mus', 'hest'],
+                [],
+                ['required' => true, 'size' => 1]
+            )
         );
     }
 
@@ -1361,7 +1354,13 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', 'mus', 'hest'], [], ['required' => true, 'size' => 2])
+            static::select(
+                'post',
+                'category',
+                ['abe', 'mus', 'hest'],
+                [],
+                ['required' => true, 'size' => 2]
+            )
         );
     }
 
@@ -1375,13 +1374,18 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', 'mus', 'hest'], [], ['required' => true, 'multiple' => true])
+            static::select(
+                'post',
+                'category',
+                ['abe', 'mus', 'hest'],
+                [],
+                ['required' => true, 'multiple' => true]
+            )
         );
     }
 
     public function testSelectWithInteger() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">Please select</option>' . "\n"
             . '<option value="" label=" "></option>' . "\n"
@@ -1390,13 +1394,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', [1], ['prompt' => true, 'include_blank' => true])
+            static::select('post', 'category', [1], ['prompt' => true, 'include_blank' => true, 'object' => $post])
         );
     }
 
     public function testListOfLists() {
         $post = new Post(['category' => '']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="">Please select</option>' . "\n"
             . '<option value="" label=" "></option>' . "\n"
@@ -1411,14 +1414,13 @@ class FormOptionsHelperTest extends TestCase {
                 'post',
                 'category',
                 [['Number', 'number'], ['Text', 'text'], ['Yes/No', 'boolean']],
-                ['prompt' => true, 'include_blank' => true]
+                ['prompt' => true, 'include_blank' => true, 'object' => $post]
             )
         );
     }
 
     public function testSelectWithSelectedValue() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="abe" selected="selected">abe</option>' . "\n"
             . '<option value="&lt;mus&gt;">&lt;mus&gt;</option>' . "\n"
@@ -1427,13 +1429,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['selected' => 'abe'])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['selected' => 'abe', 'object' => $post])
         );
     }
 
     public function testSelectWithIndexOption() {
         $post = new Post(['id' => '1']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post__category" name="post[][category]">'
             . '<option value="abe">abe</option>' . "\n"
             . '<option value="&lt;mus&gt;">&lt;mus&gt;</option>' . "\n"
@@ -1442,7 +1443,7 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], [], ['index' => null])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['object' => $post], ['index' => null])
         );
     }
 
@@ -1455,7 +1456,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithSelectedNull() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="abe">abe</option>' . "\n"
             . '<option value="&lt;mus&gt;">&lt;mus&gt;</option>' . "\n"
@@ -1464,13 +1464,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['selected' => null])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['selected' => null, 'object' => $post])
         );
     }
 
     public function testSelectWithDisabledValue() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="abe">abe</option>' . "\n"
             . '<option selected="selected" value="&lt;mus&gt;">&lt;mus&gt;</option>' . "\n"
@@ -1479,13 +1478,12 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['disabled' => 'hest'])
+            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['disabled' => 'hest', 'object' => $post])
         );
     }
 
     public function testSelectNonExistingAttrWithSelectedValue() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_locale" name="post[locale]">'
             . '<option value="en">en</option>' . "\n"
             . '<option selected="selected" value="dk">dk</option>'
@@ -1499,7 +1497,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testSelectWithPromptAndSelectedValue() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option value="one">one</option>' . "\n"
             . '<option selected="selected" value="two">two</option>'
@@ -1507,13 +1504,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['one', 'two'], ['selected' => 'two', 'prompt' => true])
+            static::select(
+                'post',
+                'category',
+                ['one', 'two'],
+                ['selected' => 'two', 'prompt' => true, 'object' => $post]
+            )
         );
     }
 
     public function testSelectWithDisabledArray() {
         $post = new Post(['category' => '<mus>']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_category" name="post[category]">'
             . '<option disabled="disabled" value="abe">abe</option>' . "\n"
             . '<option selected="selected" value="&lt;mus&gt;">&lt;mus&gt;</option>' . "\n"
@@ -1522,13 +1523,17 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::select('post', 'category', ['abe', '<mus>', 'hest'], ['disabled' => ['hest', 'abe']])
+            static::select(
+                'post',
+                'category',
+                ['abe', '<mus>', 'hest'],
+                ['disabled' => ['hest', 'abe'], 'object' => $post]
+            )
         );
     }
 
     public function testCollectionSelect() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
         $expected = '<select id="post_author_name" name="post[author_name]">'
             . '<option value="&lt;Abe&gt;">&lt;Abe&gt;</option>' . "\n"
             . '<option value="Babe" selected="selected">Babe</option>' . "\n"
@@ -1537,13 +1542,19 @@ class FormOptionsHelperTest extends TestCase {
 
         $this->assertDomEquals(
             $expected,
-            static::collectionSelect('post', 'author_name', $this->dummyPosts(), 'author_name', 'author_name')
+            static::collectionSelect(
+                'post',
+                'author_name',
+                $this->dummyPosts(),
+                'author_name',
+                'author_name',
+                ['object' => $post]
+            )
         );
     }
 
     public function testCollectionSelectUnderFieldsFor() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->collectionSelect('author_name', $this->dummyPosts(), 'author_name', 'author_name');
@@ -1559,7 +1570,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectUnderFieldsForWithIndex() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, ['index' => 815], function ($f) {
             return $f->collectionSelect('author_name', $this->dummyPosts(), 'author_name', 'author_name');
@@ -1575,7 +1585,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectUnderFieldsForWithAutoIndex() {
         $post = new Post(['id' => 815, 'author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post[]', $post, [], function ($f) {
             return $f->collectionSelect('author_name', $this->dummyPosts(), 'author_name', 'author_name');
@@ -1591,7 +1600,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectWithBlankAndStyle() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::collectionSelect(
             'post',
@@ -1599,7 +1607,7 @@ class FormOptionsHelperTest extends TestCase {
             $this->dummyPosts(),
             'author_name',
             'author_name',
-            ['include_blank' => true],
+            ['include_blank' => true, 'object' => $post],
             ['style' => 'width: 200px']
         );
 
@@ -1615,7 +1623,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectWithBlankAsStringAndStyle() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::collectionSelect(
             'post',
@@ -1623,7 +1630,7 @@ class FormOptionsHelperTest extends TestCase {
             $this->dummyPosts(),
             'author_name',
             'author_name',
-            ['include_blank' => 'No selection'],
+            ['include_blank' => 'No selection', 'object' => $post],
             ['style' => 'width: 200px']
         );
 
@@ -1639,7 +1646,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectWithMultipleOptionAppendsArrayBracketsAndHiddenInput() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::collectionSelect(
             'post',
@@ -1647,7 +1653,7 @@ class FormOptionsHelperTest extends TestCase {
             $this->dummyPosts(),
             'author_name',
             'author_name',
-            ['include_blank' => true],
+            ['include_blank' => true, 'object' => $post],
             ['multiple' => true]
         );
 
@@ -1667,15 +1673,13 @@ class FormOptionsHelperTest extends TestCase {
             $this->dummyPosts(),
             'author_name',
             'author_name',
-            ['include_blank' => true, 'name' => 'post[author_name][]'],
+            ['include_blank' => true, 'name' => 'post[author_name][]', 'object' => $post],
             ['multiple' => true]
         );
-
     }
 
     public function testCollectionSelectWithBlankAndSelected() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::collectionSelect(
             'post',
@@ -1683,7 +1687,7 @@ class FormOptionsHelperTest extends TestCase {
             $this->dummyPosts(),
             'author_name',
             'author_name',
-            ['include_blank' => true, 'selected' => '<Abe>']
+            ['include_blank' => true, 'selected' => '<Abe>', 'object' => $post]
         );
 
         $expected = '<select id="post_author_name" name="post[author_name]">'
@@ -1698,7 +1702,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectWithDisabled() {
         $post = new Post(['author_name' => 'Babe']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::collectionSelect(
             'post',
@@ -1706,7 +1709,7 @@ class FormOptionsHelperTest extends TestCase {
             $this->dummyPosts(),
             'author_name',
             'author_name',
-            ['disabled' => 'Cabe']
+            ['disabled' => 'Cabe', 'object' => $post]
         );
 
         $expected = '<select id="post_author_name" name="post[author_name]">'
@@ -1720,7 +1723,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectWithProcForValueMethod() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $expected = '<select id="post_author_name" name="post[author_name]">'
             . '<option value="&lt;Abe&gt;">&lt;Abe&gt; went home</option>' . "\n"
@@ -1746,7 +1748,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testCollectionSelectWithProcForTextMethod() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $expected = '<select id="post_author_name" name="post[author_name]">'
             . '<option value="&lt;Abe&gt;">&lt;Abe&gt; went home</option>' . "\n"
@@ -1765,16 +1766,16 @@ class FormOptionsHelperTest extends TestCase {
                 'author_name',
                 $this->dummyPosts(),
                 'author_name',
-                $fn
+                $fn,
+                ['object' => $post]
             )
         );
     }
 
     public function testTimeZoneSelect() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
-        $html = static::timeZoneSelect('post', 'time_zone', null, ['model' => $this->dummyZones()]);
+        $html = static::timeZoneSelect('post', 'time_zone', null, ['object' => $post, 'model' => $this->dummyZones()]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
             . '<option value="A">A</option>' . "\n"
             . '<option value="B">B</option>' . "\n"
@@ -1788,7 +1789,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectUnderFieldsFor() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::fieldsFor('post', $post, [], function ($f) {
             return $f->timeZoneSelect('time_zone', null, ['model' => $this->dummyZones()]);
@@ -1806,7 +1806,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectUnderFieldsForWithIndex() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::fieldsFor('post', $post, ['index' => 305], function ($f) {
             return $f->timeZoneSelect('time_zone', null, ['model' => $this->dummyZones()]);
@@ -1824,7 +1823,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectUnderFieldsForWithAutoIndex() {
         $post = new Post(['id' => 305, 'time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::fieldsFor('post[]', $post, [], function ($f) {
             return $f->timeZoneSelect('time_zone', null, ['model' => $this->dummyZones()]);
@@ -1842,10 +1840,10 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithBlank() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
             'include_blank' => true,
+            'object' => $post,
             'model' => $this->dummyZones(),
         ]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
@@ -1862,10 +1860,10 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithBlankAsString() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
             'include_blank' => 'No zone',
+            'object' => $post,
             'model' => $this->dummyZones(),
         ]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
@@ -1882,9 +1880,9 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithStyle() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
+            'object' => $post,
             'model' => $this->dummyZones(),
         ], [
             'style' => 'color: red'
@@ -1902,10 +1900,10 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithBlankAndStyle() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
             'include_blank' => true,
+            'object' => $post,
             'model' => $this->dummyZones(),
         ], [
             'style' => 'color: red'
@@ -1924,10 +1922,10 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithBlankAsStringAndStyle() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
             'include_blank' => 'No zone',
+            'object' => $post,
             'model' => $this->dummyZones(),
         ], [
             'style' => 'color: red'
@@ -1946,10 +1944,12 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithPriorityZones() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $zones = ['A', 'D'];
-        $html = static::timeZoneSelect('post', 'time_zone', $zones, ['model' => $this->dummyZones()]);
+        $html = static::timeZoneSelect('post', 'time_zone', $zones, [
+            'object' => $post,
+            'model' => $this->dummyZones()
+        ]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
             . '<option value="A">A</option>' . "\n"
             . '<option value="D" selected="selected">D</option>'
@@ -1964,10 +1964,12 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithPriorityZonesAsRegexp() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $zones = '/A|D/';
-        $html = static::timeZoneSelect('post', 'time_zone', $zones, ['model' => $this->dummyZones()]);
+        $html = static::timeZoneSelect('post', 'time_zone', $zones, [
+            'object' => $post,
+            'model' => $this->dummyZones()
+        ]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
             . '<option value="A">A</option>' . "\n"
             . '<option value="D" selected="selected">D</option>'
@@ -1985,10 +1987,12 @@ class FormOptionsHelperTest extends TestCase {
         $post = new Post(['time_zone' => 'D']);
         $post->errors = new MessageBag();
         $post->errors->merge(['time_zone' => 'invalid']);
-        static::setContextVariables(['post' => $post]);
 
         $zones = '/A|D/';
-        $html = static::timeZoneSelect('post', 'time_zone', $zones, ['model' => $this->dummyZones()]);
+        $html = static::timeZoneSelect('post', 'time_zone', $zones, [
+            'object' => $post,
+            'model' => $this->dummyZones()
+        ]);
         $expected = '<div class="field_with_errors">'
             . '<select id="post_time_zone" name="post[time_zone]">'
             . '<option value="A">A</option>' . "\n"
@@ -2005,10 +2009,10 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithDefaultTimeZoneAndNullValue() {
         $post = new Post(['time_zone' => null]);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
             'default' => 'B',
+            'object' => $post,
             'model' => $this->dummyZones()
         ]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
@@ -2024,10 +2028,10 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testTimeZoneSelectWithDefaultTimeZoneAndValue() {
         $post = new Post(['time_zone' => 'D']);
-        static::setContextVariables(['post' => $post]);
 
         $html = static::timeZoneSelect('post', 'time_zone', null, [
             'default' => 'B',
+            'object' => $post,
             'model' => $this->dummyZones()
         ]);
         $expected = '<select id="post_time_zone" name="post[time_zone]">'
@@ -2142,7 +2146,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testGroupedCollectionSelect() {
         $post = new Post(['origin' => 'dk']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::groupedCollectionSelect(
             'post',
@@ -2151,7 +2154,8 @@ class FormOptionsHelperTest extends TestCase {
             'countries',
             'continent_name',
             'country_id',
-            'country_name'
+            'country_name',
+            ['object' => $post]
         );
 
         $expected = '<select id="post_origin" name="post[origin]">'
@@ -2168,7 +2172,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testGroupedCollectionSelectWithSelected() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::groupedCollectionSelect(
             'post',
@@ -2178,7 +2181,7 @@ class FormOptionsHelperTest extends TestCase {
             'continent_name',
             'country_id',
             'country_name',
-            ['selected' => 'dk']
+            ['selected' => 'dk', 'object' => $post]
         );
 
         $expected = '<select id="post_origin" name="post[origin]">'
@@ -2195,7 +2198,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testGroupedCollectionSelectWithDisabledValue() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::groupedCollectionSelect(
             'post',
@@ -2205,7 +2207,7 @@ class FormOptionsHelperTest extends TestCase {
             'continent_name',
             'country_id',
             'country_name',
-            ['disabled' => 'dk']
+            ['disabled' => 'dk', 'object' => $post]
         );
 
         $expected = '<select id="post_origin" name="post[origin]">'
@@ -2222,7 +2224,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testGroupedCollectionSelectUnderFieldsFor() {
         $post = new Post(['origin' => 'dk']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->groupedCollectionSelect(
@@ -2231,7 +2232,7 @@ class FormOptionsHelperTest extends TestCase {
                 'countries',
                 'continent_name',
                 'country_id',
-                'country_name',
+                'country_name'
             );
         });
 
@@ -2351,7 +2352,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testWeekdaySelectUnderFieldsFor() {
         $post = new Post();
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->weekdaySelect('weekday');
@@ -2372,7 +2372,6 @@ class FormOptionsHelperTest extends TestCase {
 
     public function testWeekdaySelectUnderFieldsForWithValue() {
         $post = new Post(['weekday' => 'Monday']);
-        static::setContextVariables(['post' => $post]);
 
         $rendered = static::fieldsFor('post', $post, [], function ($f) {
             return $f->weekdaySelect('weekday');

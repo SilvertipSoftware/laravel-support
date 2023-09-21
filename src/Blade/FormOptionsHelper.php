@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 use Carbon\Carbon;
 use Closure;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
@@ -21,16 +25,25 @@ trait FormOptionsHelper {
         $htmlOptions = [],
         $block = null
     ) {
-        return (new Tags\CollectionCheckBoxes(
+        $yield = $block != null;
+        $generator = static::yieldingCollectionCheckBoxes(
             $object,
             $method,
-            static::class,
             $collection,
             $valueMethod,
             $textMethod,
             $options,
-            $htmlOptions
-        ))->render($block);
+            $htmlOptions,
+            $yield
+        );
+
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block($obj->builder);
+            }
+        }
+
+        return $generator->getReturn();
     }
 
     public static function collectionRadioButtons(
@@ -43,16 +56,25 @@ trait FormOptionsHelper {
         $htmlOptions = [],
         $block = null
     ) {
-        return (new Tags\CollectionRadioButtons(
+        $yield = $block != null;
+        $generator = static::yieldingCollectionRadioButtons(
             $object,
             $method,
-            static::class,
             $collection,
             $valueMethod,
             $textMethod,
             $options,
-            $htmlOptions
-        ))->render($block);
+            $htmlOptions,
+            $yield
+        );
+
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block($obj->builder);
+            }
+        }
+
+        return $generator->getReturn();
     }
 
     public static function collectionSelect(
@@ -112,7 +134,7 @@ trait FormOptionsHelper {
             $body .= static::contentTag('option', static::promptText($prompt), ['value' => '']);
         }
 
-       collect($groupedOptions)->each(function ($container, $key) use (&$body, $divider, $selectedKey) {
+        collect($groupedOptions)->each(function ($container, $key) use (&$body, $divider, $selectedKey) {
             $htmlAttributes = static::optionHtmlAttributes($container);
 
             if ($divider) {
@@ -175,6 +197,10 @@ trait FormOptionsHelper {
     }
 
     public static function optionsFromCollectionForSelect($collection, $valueMethod, $textMethod, $selected = null) {
+        if ($collection instanceof Builder || $collection instanceof EloquentBuilder) {
+            $collection = $collection->get();
+        }
+
         $options = collect($collection)->map(function ($element, $key) use ($textMethod, $valueMethod) {
             return [
                 static::valueForCollection($element, $textMethod, $key),
@@ -200,7 +226,10 @@ trait FormOptionsHelper {
         $optionValueMethod,
         $selectedKey = null
     ) {
-        $optGroupFn = function ($group, $groupKey) use (
+        $optGroupFn = function (
+            $group,
+            $groupKey
+        ) use (
             $groupMethod,
             $groupLabelMethod,
             $optionKeyMethod,
@@ -227,7 +256,15 @@ trait FormOptionsHelper {
     }
 
     public static function select($object, $method, $choices = null, $options = [], $htmlOptions = [], $block = null) {
-        return (new Tags\Select($object, $method, static::class, $choices, $options, $htmlOptions, $block))->render();
+        $yield = $block != null;
+        $generator = static::yieldingSelect($object, $method, $choices, $options, $htmlOptions, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->choices = $block();
+            }
+        }
+
+        return $generator->getReturn();
     }
 
     public static function timeZoneOptionsForSelect($selected = null, $priorityZones = null, $model = null) {
@@ -259,7 +296,12 @@ trait FormOptionsHelper {
             ->render();
     }
 
-    public static function weekdayOptionsForSelect($selected = null, $indexAsValue = false, $dayFormat = 'day_names', $beginningOfWeek = 1) {
+    public static function weekdayOptionsForSelect(
+        $selected = null,
+        $indexAsValue = false,
+        $dayFormat = 'day_names',
+        $beginningOfWeek = 1
+    ) {
         $dayNames = trans('date.' . $dayFormat);
         if (is_string($dayNames)) {
             $dayNames = Carbon::getDays();
@@ -280,6 +322,87 @@ trait FormOptionsHelper {
 
     public static function weekdaySelect($object, $method, $options = [], $htmlOptions = []) {
         return (new Tags\WeekdaySelect($object, $method, static::class, $options, $htmlOptions))->render();
+    }
+
+    public static function yieldingCollectionCheckBoxes(
+        $object,
+        $method,
+        $collection,
+        $valueMethod,
+        $textMethod,
+        $options = [],
+        $htmlOptions = [],
+        $yield = true
+    ) {
+        $tag = new Tags\CollectionCheckBoxes(
+            $object,
+            $method,
+            static::class,
+            $collection,
+            $valueMethod,
+            $textMethod,
+            $options,
+            $htmlOptions
+        );
+
+        $generator = $tag->yieldingRender($yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                yield $obj;
+            }
+        }
+
+        return $generator->getReturn();
+    }
+
+    public static function yieldingCollectionRadioButtons(
+        $object,
+        $method,
+        $collection,
+        $valueMethod,
+        $textMethod,
+        $options = [],
+        $htmlOptions = [],
+        $yield = false
+    ) {
+        $tag = new Tags\CollectionRadioButtons(
+            $object,
+            $method,
+            static::class,
+            $collection,
+            $valueMethod,
+            $textMethod,
+            $options,
+            $htmlOptions
+        );
+
+        $generator = $tag->yieldingRender($yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                yield $obj;
+            }
+        }
+
+        return $generator->getReturn();
+    }
+
+    public static function yieldingSelect(
+        $object,
+        $method,
+        $choices = null,
+        $options = [],
+        $htmlOptions = [],
+        $yield = false
+    ) {
+        if ($yield) {
+            $obj = (object)[
+                'choices' => '',
+            ];
+            yield $obj;
+            $choices = $obj->choices;
+        }
+
+        return (new Tags\Select($object, $method, static::class, $choices, $options, $htmlOptions, null))->render();
     }
 
     protected static function optionHtmlAttributes($element) {
@@ -336,7 +459,7 @@ trait FormOptionsHelper {
 
     protected static function extractValuesFromCollection($collection, $valueMethod, $selected) {
         if (is_callable($selected)) {
-            return $collection->map(function($element) use ($selected, $valueMethod) {
+            return $collection->map(function ($element) use ($selected, $valueMethod) {
                 if ($selected($element)) {
                     return $element->{$valueMethod};
                 }

@@ -22,6 +22,7 @@ use SilvertipSoftware\LaravelSupport\Blade\FormBuilder;
 use SilvertipSoftware\LaravelSupport\Blade\FormHelper;
 use SilvertipSoftware\LaravelSupport\Blade\FormOptionsHelper;
 use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
+use SilvertipSoftware\LaravelSupport\Routing\RestRouter;
 use Tests\TestSupport\HtmlAssertions;
 
 class FormTest extends TestCase {
@@ -38,10 +39,12 @@ class FormTest extends TestCase {
     }
 
     public function tearDown(): void {
+        parent::tearDown();
         static::$formWithGeneratesIds = true;
         static::$protectAgainstForgery = true;
         static::$multipleFileFieldIncludeHidden = false;
         static::$defaultFormBuilderClass = FormBuilder::class;
+        RestRouter::$shallowResources = true;
     }
 
     public function testLabel() {
@@ -73,7 +76,7 @@ class FormTest extends TestCase {
 
         $this->assertDomEquals(
             '<label for="post_cost">Total cost</label>',
-            static::label('post', 'cost')
+            static::label('post', 'cost', ['object' => $this->post])
         );
     }
 
@@ -82,7 +85,7 @@ class FormTest extends TestCase {
 
         $this->assertDomEquals(
             '<label for="post_language_spanish">Español</label>',
-            static::label('post', 'language', ['value' => 'spanish'])
+            static::label('post', 'language', ['value' => 'spanish', 'object' => $this->post])
         );
     }
 
@@ -91,7 +94,7 @@ class FormTest extends TestCase {
 
         $this->assertDomEquals(
             '<label for="post_body" class="post_body">Write entire text here</label>',
-            static::label('post', 'body', ['class' => 'post_body'])
+            static::label('post', 'body', ['class' => 'post_body', 'object' => $this->post])
         );
     }
 
@@ -100,20 +103,24 @@ class FormTest extends TestCase {
 
         $this->assertDomEquals(
             '<label for="post_color_red">Rojo</label>',
-            static::label('post', 'color', ['value' => 'red'])
+            static::label('post', 'color', ['value' => 'red', 'object' => $this->post])
         );
     }
 
     public function testLabelWithTranslationAndNestedAttributes() {
         Lang::setLocale('label');
 
-        $rendered = static::formFor($this->post, ['html' => ['id' => 'create-post']], function ($f) {
-            return $f->fieldsFor('comments', null, [], function ($cf) {
-                return $cf->label('body');
-            });
-        });
+        $rendered = static::formWith(
+            model: $this->post,
+            options: ['html' => ['id' => 'create-post']],
+            block: function ($f) {
+                return $f->fieldsFor('comments', null, [], function ($cf) {
+                    return $cf->label('body');
+                });
+            }
+        );
 
-        $expected = $this->wholeForm('/posts/123', 'create-post', 'edit_post', ['method' => 'patch'], function () {
+        $expected = $this->wholeForm('/posts/123', 'create-post', null, ['method' => 'patch'], function () {
             return '<label for="post_comments_attributes_0_body">Write body here</label>';
         });
 
@@ -123,13 +130,17 @@ class FormTest extends TestCase {
     public function testLabelWithTranslationFallbackAndNestedAttributes() {
         Lang::setLocale('label');
 
-        $rendered = static::formFor($this->post, ['html' => ['id' => 'create-post']], function ($f) {
-            return $f->fieldsFor('tags', null, [], function ($cf) {
-                return $cf->label('value');
-            });
-        });
+        $rendered = static::formWith(
+            model: $this->post,
+            options: ['html' => ['id' => 'create-post']],
+            block: function ($f) {
+                return $f->fieldsFor('tags', null, [], function ($cf) {
+                    return $cf->label('value');
+                });
+            }
+        );
 
-        $expected = $this->wholeForm('/posts/123', 'create-post', 'edit_post', ['method' => 'patch'], function () {
+        $expected = $this->wholeForm('/posts/123', 'create-post', null, ['method' => 'patch'], function () {
             return '<label for="post_tags_attributes_0_value">Tag</label>';
         });
 
@@ -140,15 +151,14 @@ class FormTest extends TestCase {
         $record = new \stdClass(['name' => 'ok']);
         $opts = [
             'as' => 'person',
-            'url' => '/an',
             'html' => ['id' => 'create-person']
         ];
 
-        $actual = static::formFor($record, $opts, block: function ($f) {
+        $actual = static::formWith(model: $record, scope: 'person', url: '/an', options: $opts, block: function ($f) {
             return $f->label('name');
         });
 
-        $expected = $this->wholeForm('/an', 'create-person', 'new_person', ['method' => 'post'], function() {
+        $expected = $this->wholeForm('/an', 'create-person', null, ['method' => 'post'], function () {
             return '<label for="person_name">Name</label>';
         });
 
@@ -158,32 +168,32 @@ class FormTest extends TestCase {
     public function testLabelWithCustomForAttribute() {
         $this->assertDomEquals(
             '<label for="my_for">Title</label>',
-            static::label('post', 'title', null, ['for' => 'my_for'])
+            static::label('post', 'title', null, ['for' => 'my_for', 'object' => $this->post])
         );
     }
 
     public function testLabelWithCustomIdAttribute() {
         $this->assertDomEquals(
             '<label for="post_title" id="my_id">Title</label>',
-            static::label('post', 'title', null, ['id' => 'my_id'])
+            static::label('post', 'title', null, ['id' => 'my_id', 'object' => $this->post])
         );
     }
 
     public function testLabelWithCustomForAnIdAttributes() {
         $this->assertDomEquals(
             '<label for="my_for" id="my_id">Title</label>',
-            static::label('post', 'title', null, ['for' => 'my_for', 'id' => 'my_id'])
+            static::label('post', 'title', null, ['for' => 'my_for', 'id' => 'my_id', 'object' => $this->post])
         );
     }
 
     public function testLabelForUseWithRadioButtonsWithValue() {
         $this->assertDomEquals(
             '<label for="post_title_great_title">The title goes here</label>',
-            static::label('post', 'title', 'The title goes here', ['value' => 'great_title'])
+            static::label('post', 'title', 'The title goes here', ['value' => 'great_title', 'object' => $this->post])
         );
         $this->assertDomEquals(
             '<label for="post_title_great_title">The title goes here</label>',
-            static::label('post', 'title', 'The title goes here', ['value' => 'great title'])
+            static::label('post', 'title', 'The title goes here', ['value' => 'great title', 'object' => $this->post])
         );
     }
 
@@ -199,7 +209,7 @@ class FormTest extends TestCase {
     public function testLabelWithBlockAndHtml() {
         $this->assertDomEquals(
             '<label for="post_terms">Accept <a href="/terms">Terms</a>.</label>',
-            static::label('post', 'terms', block: function () {
+            static::label('post', 'terms', ['object' => $this->post], block: function () {
                 return new HtmlString('Accept <a href="/terms">Terms</a>.');
             })
         );
@@ -208,7 +218,7 @@ class FormTest extends TestCase {
     public function testLabelWithBlockAndOptions() {
         $this->assertDomEquals(
             '<label for="my_for">The title, please:</label>',
-            static::label('post', 'title', ['for' => 'my_for'], block: function () {
+            static::label('post', 'title', ['for' => 'my_for', 'object' => $this->post], block: function () {
                 return 'The title, please:';
             })
         );
@@ -219,7 +229,7 @@ class FormTest extends TestCase {
 
         $this->assertDomEquals(
             '<label for="post_body"><b>Write entire text here</b></label>',
-            static::label('post', 'body', block: function ($b) {
+            static::label('post', 'body', ['object' => $this->post], block: function ($b) {
                 return new HtmlString('<b>' . $b->translation() . '</b>');
             })
         );
@@ -228,7 +238,7 @@ class FormTest extends TestCase {
     public function testLabelWithToModel() {
         $this->assertDomEquals(
             '<label for="post_delegator_title">Delegate Title</label>',
-            static::label('post_delegator', 'title')
+            static::label('post_delegator', 'title', ['object' => $this->postDelegator])
         );
     }
 
@@ -237,7 +247,7 @@ class FormTest extends TestCase {
 
         $this->assertDomEquals(
             '<label for="post_delegator_title">Delegate model_name title</label>',
-            static::label('post_delegator', 'title')
+            static::label('post_delegator', 'title', ['object' => $this->postDelegator])
         );
     }
 
@@ -319,23 +329,8 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFieldsForWithoutObject() {
-        $rendered = static::fieldsFor('post', null, [], function ($f) {
-            return $f->textField('title')
-                . $f->textArea('body')
-                . $f->checkBox('secret');
-        });
-
-        $expected = '<input name="post[title]" type="text" id="post_title" value="Hello World" />'
-            . '<textarea name="post[body]" id="post_body">' . "\n" . 'This is a post</textarea>'
-            . '<input name="post[secret]" type="hidden" value="0" autocomplete="off" />'
-            . '<input name="post[secret]" checked="checked" type="checkbox" id="post_secret" value="1" />';
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
     public function testFieldsForWithOnlyObject() {
-        $rendered = static::fieldsFor($this->post, null, [], function ($f) {
+        $rendered = static::fieldsFor($this->post, block: function ($f) {
             return $f->textField('title')
                 . $f->textArea('body')
                 . $f->checkBox('secret');
@@ -373,16 +368,20 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForAndFieldsFor() {
-        $rendered = static::formFor($this->post, ['as' => 'post', 'html' => ['id' => 'create-post']], function ($f) {
-            return $f->textField('title')
-                . $f->textArea('body')
-                . static::fieldsFor('parent_post', $this->post, [], function ($pf) {
-                    return $pf->checkBox('secret');
-                });
-        });
+    public function testFormWithAndFieldsFor() {
+        $rendered = static::formWith(
+            model: $this->post,
+            options: ['as' => 'post', 'html' => ['id' => 'create-post']],
+            block: function ($f) {
+                return $f->textField('title')
+                    . $f->textArea('body')
+                    . static::fieldsFor('parent_post', $this->post, [], function ($pf) {
+                        return $pf->checkBox('secret');
+                    });
+            }
+        );
 
-        $expected = $this->wholeForm('/posts/123', 'create-post', 'edit_post', ['method' => 'patch'], function () {
+        $expected = $this->wholeForm('/posts/123', 'create-post', null, ['method' => 'patch'], function () {
             return '<input name="post[title]" type="text" id="post_title" value="Hello World" />'
                 . '<textarea name="post[body]" id="post_body">' . "\n" . 'This is a post</textarea>'
                 . '<input name="parent_post[secret]" type="hidden" value="0" autocomplete="off" />'
@@ -393,16 +392,20 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForAndFieldsForWithObject() {
-        $rendered = static::formFor($this->post, ['as' => 'post', 'html' => ['id' => 'create-post']], function ($f) {
-            return $f->textField('title')
-                . $f->textArea('body')
-                . $f->fieldsFor($this->comment, null, [], function ($cf) {
-                    return $cf->textField('name');
-                });
-        });
+    public function testFormWithAndFieldsForWithObject() {
+        $rendered = static::formWith(
+            model: $this->post,
+            options: ['as' => 'post', 'html' => ['id' => 'create-post']],
+            block: function ($f) {
+                return $f->textField('title')
+                    . $f->textArea('body')
+                    . $f->fieldsFor($this->comment, null, [], function ($cf) {
+                        return $cf->textField('name');
+                    });
+            }
+        );
 
-        $expected = $this->wholeForm('/posts/123', 'create-post', 'edit_post', ['method' => 'patch'], function () {
+        $expected = $this->wholeForm('/posts/123', 'create-post', null, ['method' => 'patch'], function () {
             return '<input name="post[title]" type="text" id="post_title" value="Hello World" />'
                 . '<textarea name="post[body]" id="post_body">' . "\n" . 'This is a post</textarea>'
                 . '<input name="post[comment][name]" type="text" id="post_comment_name"'
@@ -412,26 +415,30 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForAndFieldsForWithNonNestedRelationshipAndWithoutObject() {
-        $rendered = static::formFor($this->post, [], function ($f) {
+    public function testFormWithAndFieldsForWithNonNestedRelationshipAndWithoutObject() {
+        $rendered = static::formWith(model: $this->post, block: function ($f) {
             return $f->fieldsFor('category', null, [], function ($c) {
                 return $c->textField('name');
             });
         });
 
-        $expected = $this->wholeForm('/posts/123', 'edit_post_123', 'edit_post', ['method' => 'patch'], function () {
+        $expected = $this->wholeForm('/posts/123', null, null, ['method' => 'patch'], function () {
             return '<input name="post[category][name]" type="text" id="post_category_name" />';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithSpecifiedLabelledBuilder() {
-        $rendered = static::formFor($this->post, ['builder' => $this->labelledBuilderClass()], function ($f) {
-            return $f->textField('title') . $f->textArea('body') . $f->checkBox('secret');
-        });
+    public function testFormWithWithSpecifiedLabelledBuilder() {
+        $rendered = static::formWith(
+            model: $this->post,
+            options: ['builder' => $this->labelledBuilderClass()],
+            block: function ($f) {
+                return $f->textField('title') . $f->textArea('body') . $f->checkBox('secret');
+            }
+        );
 
-        $expected = $this->wholeForm('/posts/123', 'edit_post_123', 'edit_post', ['method' => 'patch'], function() {
+        $expected = $this->wholeForm('/posts/123', null, null, ['method' => 'patch'], function () {
             return '<label for="title">Title:</label> '
                 . '<input name="post[title]" type="text" id="post_title" value="Hello World" /><br/>'
                 . '<label for="body">Body:</label> '
@@ -447,11 +454,11 @@ class FormTest extends TestCase {
     public function testDefaultFormBuilder() {
         static::$defaultFormBuilderClass = $this->labelledBuilderClass();
 
-        $rendered = static::formFor($this->post, [], function ($f) {
+        $rendered = static::formWith(model: $this->post, block: function ($f) {
             return $f->textField('title') . $f->textArea('body') . $f->checkBox('secret');
         });
 
-        $expected = $this->wholeForm('/posts/123', 'edit_post_123', 'edit_post', ['method' => 'patch'], function() {
+        $expected = $this->wholeForm('/posts/123', null, null, ['method' => 'patch'], function () {
             return '<label for="title">Title:</label> '
                 . '<input name="post[title]" type="text" id="post_title" value="Hello World" /><br/>'
                 . '<label for="body">Body:</label> '
@@ -484,7 +491,7 @@ class FormTest extends TestCase {
         $clazz = null;
         $builderClazz = $this->labelledBuilderClass();
 
-        static::formFor($this->post, ['builder' => $builderClazz], function ($f) use (&$clazz) {
+        static::formWith(model: $this->post, options: ['builder' => $builderClazz], block: function ($f) use (&$clazz) {
             return $f->fieldsFor('comments', new Comment(), [], function ($nf) use (&$clazz) {
                 $clazz = get_class($nf);
             });
@@ -493,188 +500,18 @@ class FormTest extends TestCase {
         $this->assertEquals($builderClazz, $clazz);
     }
 
-    public function testFormForWithLabelledBuilderWithNestedFieldsForWithOptions() {
-        $clazz = null;
-        $builderClazz = $this->labelledBuilderClass();
-
-        static::formFor($this->post, ['builder' => $builderClazz], function ($f) use (&$clazz) {
-            return $f->fieldsFor('comments', new Comment(), ['index' => 'foo'], function ($nf) use (&$clazz) {
-                $clazz = get_class($nf);
-            });
-        });
-
-        $this->assertEquals($builderClazz, $clazz);
-    }
-
-    public function testFormForWithLabelledBuilderWithNestedFieldsForWithCustomBuilder() {
-        $builderClazz = $this->labelledBuilderClass();
-        $subClazz = $this->otherBuilderClass();
-        $clazz = null;
-
-        static::formFor($this->post, ['builder' => $builderClazz], function ($f) use (&$clazz, $subClazz) {
-            return $f->fieldsFor('comments', new Comment(), ['builder' => $subClazz], function ($nf) use (&$clazz) {
-                $clazz = get_class($nf);
-            });
-        });
-
-        $this->assertEquals($subClazz, $clazz);
-    }
-
-    public function testFormForWithHtmlOptionsAddsOptionsToFormTag() {
-        $htmlOpts = ['id' => 'some_form', 'class' => 'some_class', 'multipart' => true];
-        $rendered = static::formFor($this->post, ['html' => $htmlOpts], function ($f) {
-        });
-        $expected = $this->wholeForm(
-            '/posts/123',
-            'some_form',
-            'some_class',
-            ['method' => 'patch', 'multipart' => 'multipart/form-data']
-        );
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
-    public function testFormForWithStringUrlOptions() {
-        $rendered = static::formFor($this->post, ['url' => 'http://www.otherdomain.com'], function ($f) {
-        });
-        $expected = $this->wholeForm('http://www.otherdomain.com', 'edit_post_123', 'edit_post', ['method' => 'patch']);
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
-    public function testFormForRequiresArguments() {
-        $this->expectException(RuntimeException::class);
-
-        static::formFor(null, ['html' => ['id' => 'create-post']]);
-    }
-
-    public function testFormForRequiresNonNullArguments() {
-        $this->expectException(RuntimeException::class);
-
-        static::formFor([null, null], ['html' => ['id' => 'create-post']]);
-    }
-
-    public function testFormFor() {
-        $rendered = static::formFor($this->post, ['html' => ['id' => 'create-post']], function ($f) {
-            $titleBlock = function () {
-                return 'The Title';
-            };
-            $buttonBlock = function () {
-                return static::contentTag('span', 'Create post');
-            };
-
-            return $f->label('title', null, [], $titleBlock)
-                . $f->textField('title')
-                . $f->textArea('body')
-                . $f->checkBox('secret')
-                . $f->submit('Create post')
-                . $f->button('Create post')
-                . $f->button(null, [], $buttonBlock);
-        });
-
-        $expected = $this->wholeForm('/posts/123', 'create-post', 'edit_post', ['method' => 'patch'], function () {
-            return '<label for="post_title">The Title</label>'
-                . '<input name="post[title]" type="text" id="post_title" value="Hello World" />'
-                . '<textarea name="post[body]" id="post_body">' . "\n" . 'This is a post</textarea>'
-                . '<input name="post[secret]" type="hidden" value="0" autocomplete="off" />'
-                . '<input name="post[secret]" checked="checked" type="checkbox" id="post_secret" value="1" />'
-                . '<input name="commit" data-disable-with="Create post" type="submit" value="Create post" />'
-                . '<button name="button" type="submit">Create post</button>'
-                . '<button name="button" type="submit"><span>Create post</span></button>';
-        });
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
-    public function testForForIsNotAffectedByFormWithGeneratesIds() {
-        static::$formWithGeneratesIds = false;
-
-        $rendered = static::formFor($this->post, ['html' => ['id' => 'create-post']], function ($f) {
-            $titleBlock = function () {
-                return 'The Title';
-            };
-            $buttonBlock = function () {
-                return static::contentTag('span', 'Create post');
-            };
-
-            return $f->label('title', null, [], $titleBlock)
-                . $f->textField('title')
-                . $f->textArea('body')
-                . $f->checkBox('secret')
-                . $f->submit('Create post')
-                . $f->button('Create post')
-                . $f->button(null, [], $buttonBlock);
-        });
-
-        $expected = $this->wholeForm('/posts/123', 'create-post', 'edit_post', ['method' => 'patch'], function () {
-            return '<label for="post_title">The Title</label>'
-                . '<input name="post[title]" type="text" id="post_title" value="Hello World" />'
-                . '<textarea name="post[body]" id="post_body">' . "\n" . 'This is a post</textarea>'
-                . '<input name="post[secret]" type="hidden" value="0" autocomplete="off" />'
-                . '<input name="post[secret]" checked="checked" type="checkbox" id="post_secret" value="1" />'
-                . '<input name="commit" data-disable-with="Create post" type="submit" value="Create post" />'
-                . '<button name="button" type="submit">Create post</button>'
-                . '<button name="button" type="submit"><span>Create post</span></button>';
-        });
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
-    public function testFormForId() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
-            return $f->button(['form' => $f->id()]);
-        });
-
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
-            return '<button name="button" type="submit" form="new_post">Create Post</button>';
-        });
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
-    public function testFormForFalseUrl() {
-        $rendered = static::formFor(new Post(), ['url' => false], function ($f) {
-        });
-
-        $expected = $this->wholeForm(false, 'new_post', 'new_post');
-        $this->assertDomEquals($expected, $rendered);
-    }
-
-    public function testFormForFalseAction() {
-        $rendered = static::formFor(new Post(), ['html' => ['action' => false]], function ($f) {
-        });
-        $expected = $this->wholeForm(false, 'new_post', 'new_post');
-        $this->assertDomEquals($expected, $rendered);
-    }
-
     public function testFieldIdWithModel() {
         $value = static::fieldId(new Post(), 'title');
         $this->assertEquals('post_title', $value);
     }
 
-    public function testFieldForFieldId() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
-            return $f->label('title')
-                . $f->textField('title', ['aria' => ['describedby' => $f->fieldId('title', 'error')]])
-                . static::tag()->span('is blank', ['id' => $f->fieldId('title', 'error')]);
-        });
-
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
-            return '<label for="post_title">Title</label>'
-                . '<input id="post_title" name="post[title]" type="text" aria-describedby="post_title_error">'
-                . '<span id="post_title_error">is blank</span>';
-        });
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
     public function testFieldForFieldIdWithIndex() {
-        $rendered = static::formFor(new Post(), ['index' => 1], function ($f) {
+        $rendered = static::formWith(model: new Post(), options: ['index' => 1], block: function ($f) {
             return $f->textField('title', ['aria' => ['describedby' => $f->fieldId('title', 'error')]])
                 . static::tag()->span('is blank', ['id' => $f->fieldId('title', 'error')]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_1_title" name="post[1][title]" type="text" aria-describedby="post_1_title_error">'
                 . '<span id="post_1_title_error">is blank</span>';
         });
@@ -682,26 +519,14 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithBlankAs() {
-        $rendered = static::formFor(new Post(), ['as' => ''], function ($f) {
-            return $f->textField('title', ['name' => $f->fieldName('title')]);
-        });
-
-        $expected = $this->wholeForm('/posts', 'new_', 'new_', [], function () {
-            return '<input id="title" name="title" type="text">';
-        });
-
-        $this->assertDomEquals($expected, $rendered);
-    }
-
     public function testFieldForFieldIdWithNamespace() {
-        $rendered = static::formFor(new Post(), ['namespace' => 'special'], function ($f) {
+        $rendered = static::formWith(model: new Post(), options: ['namespace' => 'special'], block: function ($f) {
             return $f->label('title')
                 . $f->textField('title', ['aria' => ['describedby' => $f->fieldId('title', 'error')]])
                 . static::tag()->span('is blank', ['id' => $f->fieldId('title', 'error')]);
         });
 
-        $expected = $this->wholeForm('/posts', 'special_new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<label for="special_post_title">Title</label>'
                 . '<input id="special_post_title" name="post[title]" type="text"'
                 . ' aria-describedby="special_post_title_error">'
@@ -711,113 +536,117 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFieldForFieldNameWithBlankAsAndMultiple() {
-        $rendered = static::formFor(new Post(), ['as' => ''], function ($f) {
+    public function testFieldWithFieldNameWithBlankScopeAndMultiple() {
+        $rendered = static::formWith(model: new Post(), scope: '', block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', [], true)]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_', 'new_', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="title" name="title[]" type="text">';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithoutMethodNamesOrMulitpleOrIndex() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
+    public function testFormWithFieldNameWithoutMethodNamesOrMulitpleOrIndex() {
+        $rendered = static::formWith(model: new Post(), block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title')]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_title" name="post[title]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithoutMethodNamesAndMulitple() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
+    public function testFormWithFieldNameWithoutMethodNamesAndMulitple() {
+        $rendered = static::formWith(model: new Post(), block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', [], true)]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_title" name="post[title][]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithoutMethodNamesAndIndex() {
-        $rendered = static::formFor(new Post(), ['index' => 1], function ($f) {
+    public function testFormWithFieldNameWithoutMethodNamesAndIndex() {
+        $rendered = static::formWith(model: new Post(), options: ['index' => 1], block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title')]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_1_title" name="post[1][title]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
     public function testFormForFieldNameWithoutMethodNamesAndIndexAndMultiple() {
-        $rendered = static::formFor(new Post(), ['index' => 1], function ($f) {
+        $rendered = static::formWith(model: new Post(), options: ['index' => 1], block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', [], true)]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_1_title" name="post[1][title][]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithMethodNames() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
+    public function testFormWithFieldNameWithMethodNames() {
+        $rendered = static::formWith(model: new Post(), block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', 'subtitle')]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_title" name="post[title][subtitle]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithMethodNamesAndIndex() {
-        $rendered = static::formFor(new Post(), ['index' => 1], function ($f) {
+    public function testFormWithFieldNameWithMethodNamesAndIndex() {
+        $rendered = static::formWith(model: new Post(), options: ['index' => 1], block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', 'subtitle')]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_1_title" name="post[1][title][subtitle]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithMethodNamesAndMultiple() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
+    public function testFormWithFieldNameWithMethodNamesAndMultiple() {
+        $rendered = static::formWith(model: new Post(), block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', 'subtitle', true)]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_title" name="post[title][subtitle][]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldNameWithMethodNamesAndMultipleAndIndex() {
-        $rendered = static::formFor(new Post(), ['index' => 1], function ($f) {
+    public function testFormWithFieldNameWithMethodNamesAndMultipleAndIndex() {
+        $rendered = static::formWith(model: new Post(), options: ['index' => 1], block: function ($f) {
             return $f->textField('title', ['name' => $f->fieldName('title', 'subtitle', true)]);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="post_1_title" name="post[1][title][subtitle][]" type="text">';
         });
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForFieldIdWithNamespaceAndIndex() {
-        $rendered = static::formFor(new Post(), ['namespace' => 'special', 'index' => 1], function ($f) {
-            return $f->textField('title', ['aria' => ['describedby' => $f->fieldId('title', 'error')]])
-                . static::tag()->span('is blank', ['id' => $f->fieldId('title', 'error')]);
-        });
+    public function testFormWithFieldIdWithNamespaceAndIndex() {
+        $rendered = static::formWith(
+            model: new Post(),
+            options: ['namespace' => 'special', 'index' => 1],
+            block: function ($f) {
+                return $f->textField('title', ['aria' => ['describedby' => $f->fieldId('title', 'error')]])
+                    . static::tag()->span('is blank', ['id' => $f->fieldId('title', 'error')]);
+            }
+        );
 
-        $expected = $this->wholeForm('/posts', 'special_new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input id="special_post_1_title" name="post[1][title]" type="text"'
                 . ' aria-describedby="special_post_1_title_error">'
                 . '<span id="special_post_1_title_error">is blank</span>';
@@ -826,63 +655,62 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithNestedAttributesFieldId() {
+    public function testFormWithWithNestedAttributesFieldId() {
         list($post, $comment, $tag) = [new Post(), new Comment(), new Tag()];
         $comment->relevances = collect([$tag]);
         $post->comments = collect([$comment]);
 
-        $rendered = static::formFor($post, [], function ($f) {
+        $rendered = static::formWith(model: $post, block: function ($f) {
             return $f->fieldsFor('comments', null, [], function ($cf) {
                 return $cf->fieldId('relevances_attributes');
             });
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return 'post_comments_attributes_0_relevances_attributes';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithNestedAttributesFieldName() {
+    public function testFormWithWithNestedAttributesFieldName() {
         list($post, $comment, $tag) = [new Post(), new Comment(), new Tag()];
         $comment->relevances = collect([$tag]);
         $post->comments = collect([$comment]);
 
-        $rendered = static::formFor($post, [], function ($f) {
+        $rendered = static::formWith(model: $post, block: function ($f) {
             return $f->fieldsFor('comments', null, [], function ($cf) {
                 return $cf->fieldName('relevances_attributes');
             });
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return 'post[comments_attributes][0][relevances_attributes]';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithNestedAttributesFieldNameMultiple() {
+    public function testFormWithWithNestedAttributesFieldNameMultiple() {
         list($post, $comment, $tag) = [new Post(), new Comment(), new Tag()];
         $comment->relevances = collect([$tag]);
         $post->comments = collect([$comment]);
 
-        $rendered = static::formFor($post, [], function ($f) {
+        $rendered = static::formWith(model: $post, block: function ($f) {
             return $f->fieldsFor('comments', null, [], function ($cf) {
                 return $cf->fieldName('relevances_attributes', [], true);
             });
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return 'post[comments_attributes][0][relevances_attributes][]';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithCollectionRadioButtons() {
+    public function testFormWithWithCollectionRadioButtons() {
         $post = new Post(['active' => false]);
-        static::setContextVariables(['post' => $post]);
 
         $ident = function ($v) {
             return $v;
@@ -891,11 +719,11 @@ class FormTest extends TestCase {
             return $v ? 'true' : 'false';
         };
 
-        $rendered = static::formFor($post, [], function ($f) use ($ident, $toString) {
+        $rendered = static::formWith(model: $post, block: function ($f) use ($ident, $toString) {
             return $f->collectionRadioButtons('active', [true, false], $ident, $toString);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input type="hidden" name="post[active]" value="" autocomplete="off" />'
                 . '<input id="post_active_true" name="post[active]" type="radio" value="true" />'
                 . '<label for="post_active_true">true</label>'
@@ -906,9 +734,9 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithCollectionRadioButtonsWithCustomBuilderBlock() {
+    public function testFormWithWithCollectionRadioButtonsWithCustomBuilderBlock() {
         $post = new Post(['active' => false]);
-        static::setContextVariables(['post' => $post]);
+
 
         $ident = function ($v) {
             return $v;
@@ -917,7 +745,7 @@ class FormTest extends TestCase {
             return $v ? 'true' : 'false';
         };
 
-        $rendered = static::formFor($post, [], function ($f) use ($ident, $toString) {
+        $rendered = static::formWith(model: $post, block: function ($f) use ($ident, $toString) {
             return $f->collectionRadioButtons('active', [true, false], $ident, $toString, [], [], function ($b) {
                 return $b->label([], function () use ($b) {
                     return new HtmlString($b->radioButton() . $b->text);
@@ -925,7 +753,7 @@ class FormTest extends TestCase {
             });
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input type="hidden" name="post[active]" value="" autocomplete="off" />'
                 . '<label for="post_active_true">'
                 . '<input id="post_active_true" name="post[active]" type="radio" value="true" />'
@@ -938,9 +766,9 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithCollectionRadioButtonsWithCustomBuilderBlockDoesNotLeakTemplate() {
+    public function testFormWithWithCollectionRadioButtonsWithCustomBuilderBlockDoesNotLeakTemplate() {
         $post = new Post(['id' => 1, 'active' => false]);
-        static::setContextVariables(['post' => $post]);
+
 
         $ident = function ($v) {
             return $v;
@@ -949,7 +777,7 @@ class FormTest extends TestCase {
             return $v ? 'true' : 'false';
         };
 
-        $rendered = static::formFor($post, [], function ($f) use ($ident, $toString) {
+        $rendered = static::formWith(model: $post, block: function ($f) use ($ident, $toString) {
             $radios = $f->collectionRadioButtons('active', [true, false], $ident, $toString, [], [], function ($b) {
                 return $b->label([], function () use ($b) {
                     return new HtmlString($b->radioButton() . $b->text);
@@ -959,7 +787,7 @@ class FormTest extends TestCase {
             return $radios . $f->hiddenField('id');
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post_1', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input type="hidden" name="post[active]" value="" autocomplete="off" />'
                 . '<label for="post_active_true">'
                 . '<input id="post_active_true" name="post[active]" type="radio" value="true" />'
@@ -975,7 +803,7 @@ class FormTest extends TestCase {
 
     public function testFormWithNamespaceAndWithCollectionRadioButtons() {
         $post = new Post(['active' => false]);
-        static::setContextVariables(['post' => $post]);
+
 
         $ident = function ($v) {
             return $v;
@@ -984,15 +812,20 @@ class FormTest extends TestCase {
             return $v ? 'true' : 'false';
         };
 
-        $rendered = static::formFor($post, ['namespace' => 'foo'], function ($f) use ($ident, $toString) {
-            return $f->collectionRadioButtons('active', [true, false], $ident, $toString);
-        });
+        $rendered = static::formWith(
+            model: $post,
+            options: ['namespace' => 'foo'],
+            block: function ($f) use ($ident, $toString) {
+                return $f->collectionRadioButtons('active', [true, false], $ident, $toString);
+            }
+        );
 
-        $expected = $this->wholeForm('/posts', 'foo_new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input type="hidden" name="post[active]" value="" autocomplete="off" />'
                 . '<input id="foo_post_active_true" name="post[active]" type="radio" value="true" />'
                 . '<label for="foo_post_active_true">true</label>'
-                . '<input checked="checked" id="foo_post_active_false" name="post[active]" type="radio" value="false" />'
+                . '<input checked="checked" id="foo_post_active_false" name="post[active]" type="radio"'
+                . ' value="false" />'
                 . '<label for="foo_post_active_false">false</label>';
         });
 
@@ -1001,7 +834,7 @@ class FormTest extends TestCase {
 
     public function testFormWithIndexAndWithCollectionRadioButtons() {
         $post = new Post(['active' => false]);
-        static::setContextVariables(['post' => $post]);
+
 
         $ident = function ($v) {
             return $v;
@@ -1010,24 +843,29 @@ class FormTest extends TestCase {
             return $v ? 'true' : 'false';
         };
 
-        $rendered = static::formFor($post, ['index' => 1], function ($f) use ($ident, $toString) {
-            return $f->collectionRadioButtons('active', [true, false], $ident, $toString);
-        });
+        $rendered = static::formWith(
+            model: $post,
+            options: ['index' => 1],
+            block: function ($f) use ($ident, $toString) {
+                return $f->collectionRadioButtons('active', [true, false], $ident, $toString);
+            }
+        );
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input type="hidden" name="post[1][active]" value="" autocomplete="off" />'
                 . '<input id="post_1_active_true" name="post[1][active]" type="radio" value="true" />'
                 . '<label for="post_1_active_true">true</label>'
-                . '<input checked="checked" id="post_1_active_false" name="post[1][active]" type="radio" value="false" />'
+                . '<input checked="checked" id="post_1_active_false" name="post[1][active]" type="radio"'
+                . ' value="false" />'
                 . '<label for="post_1_active_false">false</label>';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testForForWithCollectionCheckBoxes() {
+    public function testFormWithWithCollectionCheckBoxes() {
         $post = new Post(['tag_ids' => [1, 3]]);
-        static::setContextVariables(['post' => $post]);
+
         $collection = [1 => 'Tag 1', 2 => 'Tag 2', 3 => 'Tag 3'];
         $valueFn = function ($v, $k) {
             return $v;
@@ -1035,11 +873,11 @@ class FormTest extends TestCase {
         $keyFn = function ($v, $k) {
             return $k;
         };
-        $rendered = static::formFor($post, [], function ($f) use ($collection, $valueFn, $keyFn) {
+        $rendered = static::formWith(model: $post, block: function ($f) use ($collection, $valueFn, $keyFn) {
             return $f->collectionCheckBoxes('tag_ids', $collection, $keyFn, $valueFn);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input name="post[tag_ids][]" type="hidden" value="" autocomplete="off" />'
                 . '<input checked="checked" id="post_tag_ids_1" name="post[tag_ids][]" type="checkbox" value="1" />'
                 . '<label for="post_tag_ids_1">Tag 1</label>'
@@ -1052,9 +890,9 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testForForWithCollectionCheckBoxesWithCustomBuilderBlock() {
+    public function testFormWithWithCollectionCheckBoxesWithCustomBuilderBlock() {
         $post = new Post(['tag_ids' => [1, 3]]);
-        static::setContextVariables(['post' => $post]);
+
         $collection = [1 => 'Tag 1', 2 => 'Tag 2', 3 => 'Tag 3'];
         $valueFn = function ($v, $k) {
             return $v;
@@ -1062,7 +900,7 @@ class FormTest extends TestCase {
         $keyFn = function ($v, $k) {
             return $k;
         };
-        $rendered = static::formFor($post, [], function ($f) use ($collection, $valueFn, $keyFn) {
+        $rendered = static::formWith(model: $post, block: function ($f) use ($collection, $valueFn, $keyFn) {
             return $f->collectionCheckBoxes('tag_ids', $collection, $keyFn, $valueFn, [], [], function ($b) {
                 return $b->label([], function () use ($b) {
                     return new HtmlString($b->checkBox() . $b->text);
@@ -1070,7 +908,7 @@ class FormTest extends TestCase {
             });
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input name="post[tag_ids][]" type="hidden" value="" autocomplete="off" />'
                 . '<label for="post_tag_ids_1">'
                 . '<input checked="checked" id="post_tag_ids_1" name="post[tag_ids][]" type="checkbox" value="1" />'
@@ -1086,9 +924,9 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testForForWithCollectionCheckBoxesWithCustomBuilderBlockDoesNotLeakTemplate() {
+    public function testFormWithWithCollectionCheckBoxesWithCustomBuilderBlockDoesNotLeakTemplate() {
         $post = new Post(['id' => 1, 'tag_ids' => [1, 3]]);
-        static::setContextVariables(['post' => $post]);
+
         $collection = [1 => 'Tag 1', 2 => 'Tag 2', 3 => 'Tag 3'];
         $valueFn = function ($v, $k) {
             return $v;
@@ -1096,7 +934,7 @@ class FormTest extends TestCase {
         $keyFn = function ($v, $k) {
             return $k;
         };
-        $rendered = static::formFor($post, [], function ($f) use ($collection, $valueFn, $keyFn) {
+        $rendered = static::formWith(model: $post, block: function ($f) use ($collection, $valueFn, $keyFn) {
             $checks = $f->collectionCheckBoxes('tag_ids', $collection, $keyFn, $valueFn, [], [], function ($b) {
                 return $b->label([], function () use ($b) {
                     return new HtmlString($b->checkBox() . $b->text);
@@ -1106,7 +944,7 @@ class FormTest extends TestCase {
             return $checks . $f->hiddenField('id');
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post_1', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input name="post[tag_ids][]" type="hidden" value="" autocomplete="off" />'
                 . '<label for="post_tag_ids_1">'
                 . '<input checked="checked" id="post_tag_ids_1" name="post[tag_ids][]" type="checkbox" value="1" />'
@@ -1123,15 +961,19 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testForForWithNamespaceAndWithCollectionCheckBoxes() {
+    public function testFormWithWithNamespaceAndWithCollectionCheckBoxes() {
         $post = new Post(['tag_ids' => [1, 3]]);
-        static::setContextVariables(['post' => $post]);
-        $collection = [[1, 'Tag 1']];
-        $rendered = static::formFor($post, ['namespace' => 'foo'], function ($f) use ($collection) {
-            return $f->collectionCheckBoxes('tag_ids', $collection, 0, 1);
-        });
 
-        $expected = $this->wholeForm('/posts', 'foo_new_post', 'new_post', [], function () {
+        $collection = [[1, 'Tag 1']];
+        $rendered = static::formWith(
+            model: $post,
+            options: ['namespace' => 'foo'],
+            block: function ($f) use ($collection) {
+                return $f->collectionCheckBoxes('tag_ids', $collection, 0, 1);
+            }
+        );
+
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input name="post[tag_ids][]" type="hidden" value="" autocomplete="off" />'
                 . '<input checked="checked" id="foo_post_tag_ids_1" name="post[tag_ids][]" type="checkbox" value="1" />'
                 . '<label for="foo_post_tag_ids_1">Tag 1</label>';
@@ -1140,91 +982,92 @@ class FormTest extends TestCase {
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testForForWithIndexAndWithCollectionCheckBoxes() {
+    public function testFormWithWithIndexAndWithCollectionCheckBoxes() {
         $post = new Post(['tag_ids' => [1, 3]]);
-        static::setContextVariables(['post' => $post]);
+
         $collection = [[1, 'Tag 1']];
-        $rendered = static::formFor($post, ['index' => '1'], function ($f) use ($collection) {
+        $rendered = static::formWith(model: $post, options: ['index' => '1'], block: function ($f) use ($collection) {
             return $f->collectionCheckBoxes('tag_ids', $collection, 0, 1);
         });
 
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post', [], function () {
+        $expected = $this->wholeForm('/posts', null, null, [], function () {
             return '<input name="post[1][tag_ids][]" type="hidden" value="" autocomplete="off" />'
-                . '<input checked="checked" id="post_1_tag_ids_1" name="post[1][tag_ids][]" type="checkbox" value="1" />'
+                . '<input checked="checked" id="post_1_tag_ids_1" name="post[1][tag_ids][]" type="checkbox"'
+                . ' value="1" />'
                 . '<label for="post_1_tag_ids_1">Tag 1</label>';
         });
 
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithRecordUrlOption() {
-        $rendered = static::formFor($this->post, ['url' => $this->post], function ($f) {
+    public function testFormWithWithRecordUrlOption() {
+        $rendered = static::formWith(model: $this->post, url: $this->post, block: function ($f) {
         });
-        $expected = $this->wholeForm('/posts/123', 'edit_post_123', 'edit_post', ['method' => 'patch']);
+        $expected = $this->wholeForm('/posts/123', null, null, ['method' => 'patch']);
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithExistingObject() {
-        $rendered = static::formFor($this->post, [], function ($f) {
+    public function testFormWithWithExistingObject() {
+        $rendered = static::formWith(model: $this->post, block: function ($f) {
         });
-        $expected = $this->wholeForm('/posts/123', 'edit_post_123', 'edit_post', ['method' => 'patch']);
+        $expected = $this->wholeForm('/posts/123', null, null, ['method' => 'patch']);
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithNewObject() {
-        $rendered = static::formFor(new Post(), [], function ($f) {
+    public function testFormWithWithNewObject() {
+        $rendered = static::formWith(model: new Post(), block: function ($f) {
         });
-        $expected = $this->wholeForm('/posts', 'new_post', 'new_post');
+        $expected = $this->wholeForm('/posts', null, null);
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithNewObjectInList() {
-        $rendered = static::formFor([$this->post, $this->comment], [], function ($f) {
+    public function testFormWithWithNewObjectInList() {
+        $rendered = static::formWith(model: [$this->post, $this->comment], block: function ($f) {
         });
-        $expected = $this->wholeForm('/posts/123/comments', 'new_comment', 'new_comment');
+        $expected = $this->wholeForm('/posts/123/comments', null, null);
         $this->assertDomEquals($expected, $rendered);
     }
 
-    // public function testFormForWithExistingObjectAndNamespaceInList() {
-    //     $this->comment->exists = true;
-    //     $this->comment->id = 1;
+    public function testFormWithWithExistingObjectAndNamespaceInList() {
+        $this->comment->exists = true;
+        $this->comment->id = 1;
+        RestRouter::$shallowResources = false;
 
-    //     $rendered = static::formFor(['admin', $this->post, $this->comment], [], function ($f) {
-    //     });
-    //     $expected = $this->wholeForm(
-    //         '/admin/posts/123/comments/1',
-    //         'edit_comment_1',
-    //         'new_comment',
-    //         ['method' => 'patch']
-    //     );
-
-    //     $this->assertDomEquals($expected, $rendered);
-    // }
-
-    public function testFormForWithNewObjectAndNamespaceInList() {
-        $rendered = static::formFor(['admin', $this->post, $this->comment], [], function ($f) {
+        $rendered = static::formWith(model: ['admin', $this->post, $this->comment], block: function ($f) {
         });
-        $expected = $this->wholeForm('/admin/posts/123/comments', 'new_comment', 'new_comment');
+        $expected = $this->wholeForm('/admin/posts/123/comments/1', null, null, ['method' => 'patch']);
+
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithExistingObjectAndCustomUrl() {
-        $rendered = static::formFor($this->post, ['url' => '/super_posts'], function ($f) {
+    public function testFormWithWithNewObjectAndNamespaceInList() {
+        $rendered = static::formWith(model: ['admin', $this->post, $this->comment], block: function ($f) {
         });
-        $expected = $this->wholeForm('/super_posts', 'edit_post_123', 'edit_post', ['method' => 'patch']);
+        $expected = $this->wholeForm('/admin/posts/123/comments', null, null);
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithDefaultMethodAsPatch() {
-        $rendered = static::formFor($this->post, [], function ($f) {
+    public function testFormWithWithExistingObjectAndCustomUrl() {
+        $rendered = static::formWith(model: $this->post, url: '/super_posts', block: function ($f) {
         });
-        $expected = $this->wholeForm('/posts/123', 'edit_post_123', 'edit_post', ['method' => 'patch']);
+        $expected = $this->wholeForm('/super_posts', null, null, ['method' => 'patch']);
         $this->assertDomEquals($expected, $rendered);
     }
 
-    public function testFormForWithDataAttributes() {
-        $rendered = static::formFor($this->post, ['data' => ['behavior' => 'stuff'], 'remote' => true], function ($f) {
+    public function testFormWithWithDefaultMethodAsPatch() {
+        $rendered = static::formWith(model: $this->post, block: function ($f) {
         });
+        $expected = $this->wholeForm('/posts/123', null, null, ['method' => 'patch']);
+        $this->assertDomEquals($expected, $rendered);
+    }
+
+    public function testFormWithWithDataAttributes() {
+        $rendered = static::formWith(
+            model: $this->post,
+            options: ['data' => ['behavior' => 'stuff'], 'remote' => true],
+            block: function ($f) {
+            }
+        );
 
         $this->assertMatchesRegularExpression('/data-behavior="stuff"/', $rendered);
         $this->assertMatchesRegularExpression('/data-remote="true"/', $rendered);
@@ -1238,11 +1081,11 @@ class FormTest extends TestCase {
         $this->assertEquals('fields', $output);
     }
 
-    public function testFormForOnlyInstantiatesBuilderOnce() {
+    public function testFormWithOnlyInstantiatesBuilderOnce() {
         $clazz = $this->labelledBuilderClass();
         $clazz::$instantiationCount = 0;
 
-        static::formFor($this->post, ['builder' => $clazz], function ($f) {
+        static::formWith(model: $this->post, options: ['builder' => $clazz], block: function ($f) {
         });
 
         $count = $clazz::$instantiationCount;

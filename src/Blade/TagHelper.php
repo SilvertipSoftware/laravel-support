@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
 use Exception;
@@ -8,7 +10,7 @@ use Illuminate\Support\HtmlString;
 
 trait TagHelper {
 
-    private static $tagBuilderInstance;
+    protected static $tagBuilderInstance;
 
     public static function buildTagValues(...$args) {
         $tagValues = [];
@@ -55,7 +57,7 @@ trait TagHelper {
         $tokens = array_unique(
             Arr::flatten(
                 array_map(function ($v) {
-                    return preg_split('/\s+/', $v);
+                    return preg_split('/\s+/', '' . $v);
                 }, static::buildTagValues($args))
             )
         );
@@ -81,14 +83,15 @@ trait TagHelper {
             $block
         );
 
-        $options = $options ?? [];
-        $mustEscape = $mustEscape ?? true;
-
-        if ($block && is_callable($block)) {
-            return static::newTagBuilder()->contentTagString($name, $block(), $options, $mustEscape);
+        $yield = $block != null;
+        $generator = static::yieldingContentTag($name, $content, $options, $mustEscape, $yield);
+        if ($yield) {
+            foreach ($generator as $obj) {
+                $obj->content = $block();
+            }
         }
 
-        return static::newTagBuilder()->contentTagString($name, $content, $options, $mustEscape);
+        return $generator->getReturn();
     }
 
     public static function cdataSection($content = null) {
@@ -96,7 +99,7 @@ trait TagHelper {
             $content = $content();
         }
 
-        $content = preg_replace('/\]\]\>/', ']]]]><![CDATA[>', $content);
+        $content = preg_replace('/\]\]\>/', ']]]]><![CDATA[>', $content ?: '');
 
         return new HtmlString('<![CDATA[' . $content . ']]>');
     }
@@ -105,7 +108,35 @@ trait TagHelper {
         throw new Exception("TBD");
     }
 
-    private static function newTagBuilder() {
+    public static function yieldingContentTag(
+        $name,
+        $content = null,
+        $options = null,
+        $mustEscape = false,
+        $yield = true
+    ) {
+        list($content, $options, $mustEscape) = Utils::determineTagArgs(
+            $content,
+            $options,
+            $mustEscape
+        );
+
+        $options = $options ?? [];
+        $mustEscape = $mustEscape ?? false;
+
+        if ($yield) {
+            $obj = (object)[
+                'builder' => null,
+                'content' => null
+            ];
+            yield $obj;
+            $content = $obj->content;
+        }
+
+        return static::newTagBuilder()->contentTagString($name, $content, $options, $mustEscape);
+    }
+
+    protected static function newTagBuilder() {
         return new TagBuilder(static::class);
     }
 }

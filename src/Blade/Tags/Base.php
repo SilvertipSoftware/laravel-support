@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
@@ -32,7 +34,7 @@ class Base {
         $count = 0;
         $indexable = null;
 
-        $this->objectName = preg_replace('/\[\]$/', '', $objectName, -1, $count);
+        $this->objectName = preg_replace('/\[\]$/', '', $objectName ?: '', -1, $count);
         if (!$count) {
             $this->objectName = preg_replace('/\[\]\]$/', ']', $this->objectName, -1, $count);
             if ($count) {
@@ -127,7 +129,7 @@ class Base {
     }
 
     protected function retrieveAutoindex($str) {
-        $object = $this->object ?? call_user_func([$this->templateObject, 'getContextVariable'], $str);
+        $object = $this->object;
         if ($object && method_exists($object, 'toParam')) {
             return $object->toParam();
         } else {
@@ -138,14 +140,13 @@ class Base {
     protected function retrieveObject($object) {
         if ($object) {
             return $object;
-        } elseif (call_user_func([$this->templateObject, 'hasContextVariable'], $this->objectName)) {
-            return call_user_func([$this->templateObject, 'getContextVariable'], $this->objectName);
         }
+        // removed: getting instance variable from name
 
         return null;
     }
 
-    protected function sanitizedMethodName() {
+    protected function sanitizedMethodName(): string {
         if (!$this->sanitizedMethodName) {
             $this->sanitizedMethodName = preg_replace('/\?$/', '', $this->methodName);
         }
@@ -153,13 +154,14 @@ class Base {
         return $this->sanitizedMethodName;
     }
 
-    protected function sanitizedValue($value) {
+    protected function sanitizedValue($value): string {
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
         }
 
-        $temp = preg_replace('/[\s.]/', '_', $value);
+        $temp = preg_replace('/[\s.]/', '_', '' . $value);
         $temp = preg_replace('/[^-[[:word:]]]/', '', $temp);
+
         return strtolower($temp);
     }
 

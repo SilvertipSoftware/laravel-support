@@ -51,7 +51,6 @@ class ConesController extends Controller {
                 return $this->params()
                     ->require('cone')
                     ->permit(['color', 'eye_id']);
-                break;
             case 'nested':
                 return $this->params()
                     ->require('cone')
@@ -61,7 +60,6 @@ class ConesController extends Controller {
                             'side'
                         ]
                     ]);
-                break;
             case 'arrays':
                 return $this->params()
                     ->require('cone')
@@ -70,7 +68,6 @@ class ConesController extends Controller {
                             ['color']
                         ]
                     ]);
-                break;
             default:
                 return $this->params()
                     ->require('cone')

@@ -13,6 +13,7 @@
     <exclude-pattern>*/node_modules/*</exclude-pattern>
     <exclude-pattern>*/storage/*</exclude-pattern>
     <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/devops/coverage</exclude-pattern>
 
     <!--PSR2 Excludes-->
     <rule ref="PSR2">
