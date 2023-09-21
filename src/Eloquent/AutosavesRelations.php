@@ -294,7 +294,6 @@ trait AutosavesRelations {
                                 'Nested validation for ' . $inverseRelationType
                                 . ' (inverse) relations not supported.'
                             );
-                            break;
                     }
                 }
                 break;

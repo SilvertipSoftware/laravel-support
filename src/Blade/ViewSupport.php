@@ -15,10 +15,8 @@ class ViewSupport {
     use FormHelper,
         FormOptionsHelper,
         FormTagHelper,
-        TagHelper;
-    use UrlHelper {
-        UrlHelper::urlFor as baseUrlFor;
-    }
+        TagHelper,
+        UrlHelper;
 
     public static $capturingSections = [];
 

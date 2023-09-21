@@ -11,19 +11,23 @@ class RequestFreshnessHelpers {
 
     public static function register() {
         Request::macro('setResponseFreshnessInfo', function (array $info) {
+            // @phpstan-ignore-next-line
             $this->responseFreshnessInfo = new Fluent($info);
         });
 
         Request::macro('getResponseFreshnessInfo', function () {
+            // @phpstan-ignore-next-line
             if (empty($this->responseFreshnessInfo)) {
+                // @phpstan-ignore-next-line
                 $this->setResponseFreshnessInfo([]);
             }
 
+            // @phpstan-ignore-next-line
             return $this->responseFreshnessInfo;
         });
 
         Request::macro('isFresh', function () {
-            $responseInfo = $this->getResponseFreshnessInfo();
+            // @phpstan-ignore-next-line
             $ifModifiedSince = $this->headers->get('if_modified_since');
             if (!$ifModifiedSince) {
                 return false;
@@ -35,10 +39,12 @@ class RequestFreshnessHelpers {
                 return false;
             }
 
-            return $this->notModified($ifModifiedSince, $responseInfo->last_modified);
+            // @phpstan-ignore-next-line
+            return $this->notModified($ifModifiedSince, $this->getResponseFreshnessInfo()->last_modified);
         });
 
         Request::macro('addFreshnessHeaders', function ($response) {
+            // @phpstan-ignore-next-line
             $responseInfo = $this->getResponseFreshnessInfo();
 
             if ($responseInfo->last_modified) {

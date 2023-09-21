@@ -22,6 +22,12 @@
         "nunomaduro/larastan": "^2.0"
     },
     "scripts": {
+        "check-all": [
+            "@lint",
+            "@cs",
+            "@stan",
+            "@ut"
+        ],
         "cs": "vendor/bin/phpcs --standard=devops/style --report-width=80 --colors .",
         "lint": "vendor/bin/parallel-lint --exclude .git --exclude vendor --colors .",
         "stan": "vendor/bin/phpstan analyse --configuration=devops/phpstan.neon",

@@ -2,12 +2,14 @@
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
+use Illuminate\Database\Eloquent\Concerns\HasEvents;
 use Illuminate\Support\Fluent;
 use Illuminate\Support\Str;
 use SilvertipSoftware\LaravelSupport\Libs\StrongParameters\Parameters;
 
 class FluentModel extends Fluent {
-    use Naming,
+    use HasEvents,
+        Naming,
         Translation,
         Validation;
 

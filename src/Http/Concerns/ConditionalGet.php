@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns;
 
 use Carbon\Carbon;
@@ -11,6 +13,7 @@ trait ConditionalGet {
     public function freshWhen($object, $lastModified = null) {
         $request = request();
 
+        // @phpstan-ignore-next-line
         $request->setResponseFreshnessInfo([
             'last_modified' => $lastModified ?: $this->computeLastModifiedFrom($object)
         ]);
@@ -19,6 +22,7 @@ trait ConditionalGet {
     public function isStale($object, $lastModified = null) {
         $this->freshWhen($object, $lastModified);
 
+        // @phpstan-ignore-next-line
         return !request()->isFresh();
     }
 

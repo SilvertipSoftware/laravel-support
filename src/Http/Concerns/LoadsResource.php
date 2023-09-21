@@ -27,6 +27,8 @@ trait LoadsResource {
     }
 
     protected function createCollectionQuery($name, $class, $hasParent) {
+        $query = null;
+
         if ($hasParent) {
             $scopeMethod = 'scopeFor' . Str::studly($this->parentName);
 

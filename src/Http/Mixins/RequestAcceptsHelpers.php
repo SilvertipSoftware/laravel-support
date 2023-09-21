@@ -9,10 +9,12 @@ class RequestAcceptsHelpers {
 
     public static function register() {
         Request::macro('wantsJavascript', function () {
+            // @phpstan-ignore-next-line
             return RequestAcceptsHelpers::requestAcceptsTypes($this, ['/javascript', '-javascript']);
         });
 
         Request::macro('wantsTurboStream', function () {
+            // @phpstan-ignore-next-line
             return RequestAcceptsHelpers::requestAcceptsTypes($this, ['/vnd.turbo-stream.html']);
         });
     }

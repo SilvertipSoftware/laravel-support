@@ -28,22 +28,18 @@ class FormBuilder {
 
     public $index;
     public $isMultipart;
-    public $object;
-    public $objectName;
-    public $options;
 
     protected $defaultHtmlOptions;
     protected $defaultOptions;
     protected $emittedHiddenId = false;
     protected $nestedChildIndices = [];
-    protected $template;
 
-    public function __construct($objectName, $object, $template, $options) {
-        $this->objectName = $objectName;
-        $this->object = $object;
-        $this->template = $template;
-        $this->options = $options;
-
+    public function __construct(
+        public $objectName,
+        public $object,
+        protected $template,
+        public $options
+    ) {
         $this->defaultOptions = $options
             ? Arr::only($options, ['index', 'namespace', 'skip_default_ids', 'allow_method_names_outside_object'])
             : [];
@@ -462,6 +458,7 @@ class FormBuilder {
             yield $obj;
             $output = $obj->content;
 
+            // @phpstan-ignore-next-line
             if ($output && $emitHiddenId && !$f->emittedHiddenId) {
                 $output .= ($this->template)::hiddenField('id');
             }
