@@ -45,7 +45,6 @@ class TagHelperTest extends TestCase {
 
     public function testTokenList() {
         $this->assertDirectiveExists('tokenList');
-        $this->assertDirectiveNotExists('endTokenList');
 
         $this->assertEquals('one two', $this->blade("@tokenList('one', 'two')"));
         $this->assertEquals('one two', $this->blade("@tokenList(['one', 'two'])"));
@@ -55,7 +54,6 @@ class TagHelperTest extends TestCase {
 
     public function testClassNames() {
         $this->assertDirectiveExists('classNames');
-        $this->assertDirectiveNotExists('endClassNames');
 
         $this->assertEquals('one two', $this->blade("@classNames('one', 'two')"));
         $this->assertEquals('one two', $this->blade("@classNames(['one', 'two'])"));
@@ -65,16 +63,13 @@ class TagHelperTest extends TestCase {
 
     public function testCloseTag() {
         $this->assertDirectiveExists('closeTag');
-        $this->assertDirectiveNotExists('endCloseTag');
 
         $this->assertEquals('</svg>', $this->blade("@closeTag('svg')"));
     }
 
     public function testContentTag() {
         $this->assertDirectiveExists('contentTag');
-        $this->assertDirectiveExists('endContentTag');
         $this->assertDirectiveNotExists('bldContentTag');
-        $this->assertDirectiveNotExists('endBldContentTag');
 
         $this->assertBlade(
             '<span>Hello span</span>',
@@ -106,21 +101,21 @@ class TagHelperTest extends TestCase {
     public function testContentTagWithBlock() {
         $this->assertBlade(
             '<span>Hello </span>',
-            "@contentTag('span' as \$_)Hello @endContentTag"
+            "@contentTag('span' as \$_)Hello @endBlock"
         );
     }
 
     public function testContentTagWithBlockAndOptions() {
         $this->assertBlade(
             '<span class="important">Hello </span>',
-            "@contentTag('span', ['class' => 'important'] as \$_)Hello @endContentTag"
+            "@contentTag('span', ['class' => 'important'] as \$_)Hello @endBlock"
         );
     }
 
     public function testContentTagDoesNotEscapeForBladeWithBlock() {
         $this->assertBlade(
             '<span><b>Hello bold</b></span>',
-            "@contentTag('span' as \$_)<b>Hello bold</b>@endContentTag"
+            "@contentTag('span' as \$_)<b>Hello bold</b>@endBlock"
         );
     }
 
@@ -132,9 +127,7 @@ class TagHelperTest extends TestCase {
 
     public function testCdataSection() {
         $this->assertDirectiveExists('cdataSection');
-        $this->assertDirectiveNotExists('endCdataSection');
         $this->assertDirectiveNotExists('bldCdataSection');
-        $this->assertDirectiveNotExists('endBldCdataSection');
 
         $this->assertEquals(
             '<![CDATA[Play >]]>',

@@ -28,16 +28,17 @@ class FormBuilderTest extends TestCase {
 
     public function testBasicBuilderDirectivesExist() {
         foreach (FormBuilder::$fieldHelpers as $helper) {
-            $this->assertDirectiveExists('bld' . ucfirst($helper));
+            $this->assertDirectiveExists($helper);
         }
 
-        $this->assertDirectiveExists('bldButton');
-        $this->assertDirectiveExists('bldSelect');
-        $this->assertDirectiveExists('bldSubmit');
+        $this->assertDirectiveExists('button');
+        $this->assertDirectiveExists('select');
+        $this->assertDirectiveExists('submit');
     }
 
     public function testFormId() {
-        $this->assertDirectiveExists('bldId');
+        $this->assertDirectiveExists('id');
+
         $expected = '<form accept-charset="UTF-8" action="/posts" id="new_post" method="post">'
             . '<span>Hello there</span>'
             . '</form>'
@@ -46,51 +47,51 @@ class FormBuilderTest extends TestCase {
         $blade = "@formWith(model: \$newPost, options: ['id' => 'new_post'] as \$f)\n"
             . "<span>Hello there</span>\n"
             . "@section('sticky_footer')\n"
-            . '<div form="@bldId($f)">form reference</div>' . "\n"
+            . '<div form="@id($f)">form reference</div>' . "\n"
             . "@endsection\n"
-            . "@endFormWith\n"
+            . "@endBlock\n"
             . "@yield('sticky_footer')";
 
         $this->assertBlade($expected, $blade);
     }
 
     public function testFieldId() {
-        $this->assertDirectiveExists('bldFieldId');
+        $this->assertDirectiveExists('fieldId');
 
         $expected = '<form accept-charset="UTF-8" action="/posts" method="post">'
             . '<div>post_title wuz here</div>'
             . '</form>';
 
         $blade = "@formWith(model: \$newPost as \$f)\n"
-            . "<div>@bldFieldId(\$f, 'title') wuz here</div>"
-            . "@endFormWith";
+            . "<div>@fieldId(\$f, 'title') wuz here</div>"
+            . "@endBlock";
 
         $this->assertBlade($expected, $blade);
     }
 
     public function testFieldName() {
-        $this->assertDirectiveExists('bldFieldName');
+        $this->assertDirectiveExists('fieldName');
 
         $expected = '<form accept-charset="UTF-8" action="/posts" method="post">'
             . '<div>post[title] wuz here</div>'
             . '</form>';
 
         $blade = "@formWith(model: \$newPost as \$f)\n"
-            . "<div>@bldFieldName(\$f, 'title') wuz here</div>\n"
-            . "@endFormWith";
+            . "<div>@fieldName(\$f, 'title') wuz here</div>\n"
+            . "@endBlock";
 
         $this->assertBlade($expected, $blade);
     }
 
     public function testCollectionSelect() {
-        $this->assertDirectiveExists('bldCollectionSelect');
+        $this->assertDirectiveExists('collectionSelect');
     }
 
     public function testCollectionRadioButtons() {
-        $this->assertDirectiveExists('bldCollectionRadioButtons');
+        $this->assertDirectiveExists('collectionRadioButtons');
     }
 
     public function testCollectionCheckBoxes() {
-        $this->assertDirectiveExists('bldCollectionCheckBoxes');
+        $this->assertDirectiveExists('collectionCheckBoxes');
     }
 }

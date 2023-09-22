@@ -19,12 +19,12 @@ NOTE: This guide is not intended to be a complete documentation of available for
 
 ## Dealing with Basic Forms
 
-The main form helper is `@formWith`.
+The main form helper is `formWith`.
 
 ```php
 @formWith(['action' => '/'] as $form)
   Form contents
-@endFormWith
+@endBlock
 ```
 
 When called without arguments like this, it creates a form tag which, when submitted, will POST to the current page. For
@@ -56,10 +56,10 @@ To create this form you will use `formWith` and the form builder object it yield
 
 ```php
 @formWith(url: '/search', options: ['method' => 'get'] as $form)
-  @bldLabel($form, 'query', 'Search for:')
-  @bldTextField($form, 'query')
-  @bldSubmit($form, "Search")
-@endFormWith
+  @label($form, 'query', 'Search for:')
+  @textField($form, 'query')
+  @submit($form, "Search")
+@endBlock
 ```
 
 This will generate the following HTML:
@@ -87,7 +87,7 @@ The form builder object yielded by `formWith` provides numerous helper methods f
 fields, checkboxes, and radio buttons. The first two parameters to these directives is always the form builder, and the
 name of the input. When the form is submitted, the name will be passed along with the form data, and will make its way
 to the `request()` input in the controller with the value entered by the user for that field. For example, if the form
-contains `@bldTextField($form, 'query')`, then you would be able to get the value of this field in the controller with
+contains `@textField($form, 'query')`, then you would be able to get the value of this field in the controller with
 `request('query')`.
 
 When naming inputs, Laravel Support uses certain conventions that make it possible to submit parameters with non-scalar
@@ -99,10 +99,10 @@ values such as arrays, which will also be accessible in `request()` input. You c
 Checkboxes are form controls that give the user a set of options they can enable or disable:
 
 ```php
-@bldCheckBox($form, 'pet_dog') %>
-@bldLabel($form, 'pet_dog', 'I own a dog')
-@bldCheckBox($form, 'pet_cat') %>
-@bldLabel($form, 'pet_cat', 'I own a cat')
+@checkBox($form, 'pet_dog') %>
+@label($form, 'pet_dog', 'I own a dog')
+@checkBox($form, 'pet_cat') %>
+@label($form, 'pet_cat', 'I own a cat')
 ```
 
 This generates the following:
@@ -123,10 +123,10 @@ Radio buttons, while similar to checkboxes, are controls that specify a set of o
 exclusive (i.e., the user can only pick one):
 
 ```php
-@bldRadioButton($form, 'age', 'child')
-@bldLabel($form, 'age_child', 'I am younger than 21')
-@bldRadioButton($form, 'age', 'adult')
-@bldLabel($form, 'age_adult', 'I am over 21')
+@radioButton($form, 'age', 'child')
+@label($form, 'age_child', 'I am younger than 21')
+@radioButton($form, 'age', 'adult')
+@label($form, 'age_adult', 'I am over 21')
 ```
 
 Output:
@@ -138,7 +138,7 @@ Output:
 <label for="age_adult">I am over 21</label>
 ```
 
-The third parameter to `bldRadioButton` is the value of the input. Because these two radio buttons share the same name
+The third parameter to `radioButton` is the value of the input. Because these two radio buttons share the same name
 (`age`), the user will only be able to select one of them, and `request('age')` will contain either `"child"` or
 `"adult"`.
 
@@ -151,21 +151,21 @@ Other form controls worth mentioning are text areas, hidden fields, password fie
 fields, and many more:
 
 ```php
-@bldTextArea($form, 'message', ['size' => "70x5"])
-@bldHiddenField($form, 'parent_id', ['value' => "foo"])
-@bldPasswordField($form, 'password')
-@bldNumberField($form, 'price', ['in' => [1.0, 20.0], 'step' => 0.5])
-@bldRangeField($form, 'discount', ['in' => [1, 100]])
-@bldDateField($form, 'born_on')
-@bldTimeField($form, 'started_at')
-@bldDatetimeLocalField($form, 'graduation_day')
-@bldMonthField($form, 'birthday_month')
-@bldWeekField($form, 'birthday_week')
-@bldSearchField($form, 'name')
-@bldEmailField($form, 'address')
-@bldTelephoneField($form, 'phone')
-@bldUrlField($form, 'homepage')
-@bldColorField($form, 'favorite_color')
+@textArea($form, 'message', ['size' => "70x5"])
+@hiddenField($form, 'parent_id', ['value' => "foo"])
+@passwordField($form, 'password')
+@numberField($form, 'price', ['in' => [1.0, 20.0], 'step' => 0.5])
+@rangeField($form, 'discount', ['in' => [1, 100]])
+@dateField($form, 'born_on')
+@timeField($form, 'started_at')
+@datetimeLocalField($form, 'graduation_day')
+@monthField($form, 'birthday_month')
+@weekField($form, 'birthday_week')
+@searchField($form, 'name')
+@emailField($form, 'address')
+@telephoneField($form, 'phone')
+@urlField($form, 'homepage')
+@colorField($form, 'favorite_color')
 ```
 
 Output:
@@ -217,10 +217,10 @@ The following form:
 
 ```php
 @formWith(model: $article as $form)
-  @bldTextField($form, 'title')
-  @bldTextArea($form, 'body', ['size' => "60x10"])
-  @bldSubmit($form)
-@endFormWith
+  @textField($form, 'title')
+  @textArea($form, 'body', ['size' => "60x10"])
+  @submit($form)
+@endBlock
 ```
 
 Outputs:
@@ -249,19 +249,19 @@ TIP: Conventionally your inputs will mirror model attributes. However, they don'
 you need you can include it in your form just as with attributes and access it via
 `request('article')['my_nifty_non_attribute_input']`.
 
-#### The `fieldsFor` Helper
+#### The `fhFieldsFor`/`fieldsFor` Helper
 
-The `fieldsFor` helper creates a similar binding but without rendering a `<form>` tag. This can be used to render fields
+The `fhFieldsFor` helper creates a similar binding but without rendering a `<form>` tag. This can be used to render fields
 for additional model objects within the same form. For example, if you had a `Person` model with an associated
 `ContactDetail` model, you could create a single form for both like so:
 
 ```php
 @formWith(model: $person as $personForm)
-  @bldTextField($personForm, 'name')
-  @fieldsFor('contact_detail', $person->contact_detail as $contactDetailForm)
-    @bldTextField($contactDetailForm, 'phone_number')
-  @endFieldsFor
-@endFormWith
+  @textField($personForm, 'name')
+  @fhFieldsFor('contact_detail', $person->contact_detail as $contactDetailForm)
+    @textField($contactDetailForm, 'phone_number')
+  @endBlock
+@endBlock
 ```
 
 Which produces the following output:
@@ -274,7 +274,7 @@ Which produces the following output:
 </form>
 ```
 
-The object yielded by `fieldsFor` is a form builder like the one yielded by `form_with`.
+The object yielded by `fhFieldsFor` is a form builder like the one yielded by `form_with`.
 
 ### Relying on Model Identification
 
@@ -359,9 +359,9 @@ keyword:
 
 ```php
 @formWith(url: "/posts/1", options: ['method' => 'patch'] as $form)
-  @bldButton($form, "Delete", ['formmethod' => 'delete', 'data' => ['confirm' => 'Are you sure?']])
-  @bldButton($form, "Update")
-@endFormWith
+  @button($form, "Delete", ['formmethod' => 'delete', 'data' => ['confirm' => 'Are you sure?']])
+  @button($form, "Update")
+@endBlock
 ```
 
 Similar to `<form>` elements, most browsers _don't support_ overriding form methods declared through [formmethod]
@@ -393,10 +393,10 @@ submit data using an XHR (Ajax) request. To disable this include `local => true`
 Select boxes in HTML require a significant amount of markup - one `<option>` element for each option to choose from. So
 Laravel Support provides helper methods to reduce this burden.
 
-For example, let's say we have a list of cities for the user to choose from. We can use the `bldSelect` helper like so:
+For example, let's say we have a list of cities for the user to choose from. We can use the `select` helper like so:
 
 ```php
-@bldSelect($form, 'city', ["Berlin", "Chicago", "Madrid"])
+@select($form, 'city', ["Berlin", "Chicago", "Madrid"])
 ```
 
 Output:
@@ -412,7 +412,7 @@ Output:
 We can also designate `<option>` values that differ from their labels:
 
 ```php
-@bldSelect($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
+@select($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
 ```
 
 Output:
@@ -430,7 +430,7 @@ This way, the user will see the full city name, but `request('city')` will be on
 Lastly, we can specify a default choice for the select box with the `selected` option:
 
 ```php
-@bldSelect($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]], ['selected' => "CHI"])
+@select($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]], ['selected' => "CHI"])
 ```
 
 Output:
@@ -446,10 +446,10 @@ Output:
 ### Option Groups
 
 In some cases we may want to improve the user experience by grouping related options together. We can do so by passing a
-`array` to `bldSelect`:
+`array` to `select`:
 
 ```php
-@bldSelect($form, 'city', [
+@select($form, 'city', [
     "Europe" => [ ["Berlin", "BE"], ["Madrid", "MD"] ],
     "North America" => [ ["Chicago", "CHI"] ],
 ], ['selected' => "CHI"])
@@ -482,8 +482,8 @@ The following form:
 
 ```php
 @formWith(model: $person as $form)
-  @bldSelect($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
-@endFormWith
+  @select($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
+@endBlock
 ```
 
 Outputs a select box like:
@@ -502,11 +502,11 @@ model, we didn't need to specify a `selected` argument!
 ### Time Zone Select
 
 To leverage time zone support in Laravel, you have to ask your users what time zone they are in. Doing so would require
-generating select options from a list of pre-defined timezones, but you can simply use the `bldTimeZoneSelect` helper
+generating select options from a list of pre-defined timezones, but you can simply use the `timeZoneSelect` helper
 that already wraps this:
 
 ```php
-@bldTimeZoneSelect($form, 'time_zone')
+@timeZoneSelect($form, 'time_zone')
 ```
 
 ## Choices from a Collection of Arbitrary Objects
@@ -533,8 +533,8 @@ Then we can allow the user to choose a city from the database with the following
 
 ```php
 @formWith(model: $person as $form)
-  @bldSelect($form, 'city_id', City::orderBy('name')->get()->map(function ($c) { return [$c->name, $c->id]; }))
-@endFormWith
+  @select($form, 'city_id', City::orderBy('name')->get()->map(function ($c) { return [$c->name, $c->id]; }))
+@endBlock
 ```
 
 NOTE: When rendering a field for a `belongsTo` association, you must specify the name of the foreign key (`city_id` in
@@ -544,12 +544,12 @@ However, Rails provides helpers that generate choices from a collection without 
 These helpers determine the value and text label of each choice by calling specified methods on each object in the
 collection.
 
-### The `bldCollectionSelect` Helper
+### The `collectionSelect` Helper
 
-To generate a select box, we can use `bldCollectionSelect`:
+To generate a select box, we can use `collectionSelect`:
 
 ```php
-@bldCollectionSelect($form, 'city_id', City::orderBy('name'), 'id', 'name')
+@collectionSelect($form, 'city_id', City::orderBy('name'), 'id', 'name')
 ```
 
 Output:
@@ -562,18 +562,18 @@ Output:
 </select>
 ```
 
-NOTE: With `bldCollectionSelect` we specify the value method first (`id` in the example above), and the text label
+NOTE: With `collectionSelect` we specify the value method first (`id` in the example above), and the text label
 method second (`name` in the example above).  This is opposite of the order used when specifying choices for the
 `select` helper, where the text label comes first and the value second.
 
 The collection passed in can be a `Collection`, a query `Builder`, or an array.
 
-### The `bldCollectionRadioButtons` Helper
+### The `collectionRadioButtons` Helper
 
-To generate a set of radio buttons, we can use `bldCollectionRadioButtons`:
+To generate a set of radio buttons, we can use `collectionRadioButtons`:
 
 ```php
-@bldCollectionRadioButtons($form, 'city_id', City::orderBy('name'), 'id', 'name')
+@collectionRadioButtons($form, 'city_id', City::orderBy('name'), 'id', 'name')
 ```
 
 Output:
@@ -589,14 +589,14 @@ Output:
 <label for="person_city_id_2">Madrid</label>
 ```
 
-### The `bldCollectionCheckBoxes` Helper
+### The `collectionCheckBoxes` Helper
 
 To generate a set of check boxes — for example, to support a `HasMany` association — we can use
-`bldCollectionCheckBoxes`:
+`collectionCheckBoxes`:
 
 
 ```php
-@bldCollectionCheckBoxes($form, 'interest_ids', Interest::orderBy('name'), 'id', 'name')
+@collectionCheckBoxes($form, 'interest_ids', Interest::orderBy('name'), 'id', 'name')
 ```
 
 Output:
@@ -622,8 +622,8 @@ process. File upload fields can be rendered with the `fileField`.
 
 ```php
 @formWith(model: $person as $form)
-  @bldFileField(form, 'picture')
-@endFormWith
+  @fileField(form, 'picture')
+@endBlock
 ```
 
 The most important thing to remember with file uploads is that the rendered form's `enctype` attribute **must** be set
@@ -633,7 +633,7 @@ attribute manually:
 ```php
 @formWith(url: '/uploads', options: ['multipart' => true] as $form)
   @fileField($form, 'picture')
-@endFormWith
+@endBlock
 ```
 
 Note that, in accordance with `formWith` conventions, the field names in the two forms above will also differ.  That
@@ -664,17 +664,17 @@ your forms in the usual way, you can also create a subclass of `FormBuilder`, an
 
 ```php
 @formWith(model: $person as $form)
-    @bldLabel($form, 'first_name')
-    @bldTextField($form, 'first_name')
-@endFormWith
+    @label($form, 'first_name')
+    @textField($form, 'first_name')
+@endBlock
 ```
 
 can be replaced with
 
 ```php
 @formWith(model: $person, options: ['builder' => LabellingFormBuilder::class] as $form)
-  @bldTextField($form, 'first_name')
-@endFormWith
+  @textField($form, 'first_name')
+@endBlock
 ```
 
 by defining a `LabellingFormBuilder` class similar to the following:
@@ -776,13 +776,13 @@ with its `index` option can assist:
 
 ```php
 @formWith(model: $person as $personForm)
-  @bldTextField($personForm, 'name')
+  @textField($personForm, 'name')
   @foreach ($person->addresses as $address)
-    @bldFieldsFor($personForm, 'address', ['index' => $address->id] as $addressForm)
-      @bldTextField($addressForm, 'city')
-    @endBldFieldsFor
-  @endforeach
-@endFormWith
+    @fieldsFor($personForm, 'address', ['index' => $address->id] as $addressForm)
+      @textField($addressForm, 'city')
+    @endBlock
+  @endBlock
+@endBlock
 ```
 
 Assuming the person has two addresses with IDs 23 and 45, the above form would
@@ -815,7 +815,7 @@ Which will result in a `request()` hash that looks like:
 ]
 ```
 
-All of the form inputs map to the `"person"` hash because we called `bldFieldsFor`
+All of the form inputs map to the `"person"` hash because we called `fieldsFor`
 on the `$personForm` form builder. By specifying an `index` option, we mapped
 the address inputs to `person[address][$address->id][city]` instead of
 `person[address][city]`. Thus we are able to determine which Address records
@@ -829,8 +829,8 @@ input name explicitly. For example:
 
 ```php
 @fieldsFor('person[address][primary]', $address, ['index' => $address->id] as $addressForm)
-  @bldTextField($addressForm, 'city')
-@endFieldsFor
+  @textField($addressForm, 'city')
+@endBlock
 ```
 
 will create inputs like:
@@ -850,8 +850,8 @@ the given name. For example:
 
 ```php
 @fieldsFor('person[address][primary][]', $address as $addressForm)
-  @bldTextField($addressForm, 'city')
-@endFieldsFor
+  @textField($addressForm, 'city')
+@endBlock
 ```
 
 produces exactly the same output as our original example. This requires `$address` to implement a `toParam()` method,
@@ -867,7 +867,7 @@ times it can be necessary to set an `_token` for the resource; this can be done 
 ```php
 @formWith(url: 'http://farfar.away/form', options: ['csrf_token' => 'external_token'] as $form)
   Form contents
-@endFormWith
+@endBlock
 ```
 
 Sometimes when submitting data to an external resource, like a payment gateway, the fields that can be used in the form
@@ -877,7 +877,7 @@ are limited by an external API and it may be undesirable to generate an `_token`
 ```php
 @formWith(url: 'http://farfar.away/form', options: ['csrf_token' => false] as $form)
   Form contents
-@endFormWith
+@endBlock
 ```
 
 ## Building Complex Forms
@@ -920,18 +920,18 @@ The following form allows a user to create a `Person` and its associated address
 @formWith(model: $person as $form)
   Addresses:
   <ul>
-    @bldFieldsFor($form, 'addresses' as $addressesForm)
+    @fieldsFor($form, 'addresses' as $addressesForm)
       <li>
-        @bldLabel($addressesForm, 'kind')
-        @bldTextField($addressesForm, 'kind')
+        @label($addressesForm, 'kind')
+        @textField($addressesForm, 'kind')
 
-        @bldLabel($addressesForm, 'street')
-        @bldTextField($addressesForm, 'street')
+        @label($addressesForm, 'street')
+        @textField($addressesForm, 'street')
         ...
       </li>
-    @endBldFieldsFor
+    @endBlock
   </ul>
-@endFormWith
+@endBlock
 ```
 
 When an association accepts nested attributes `fieldsFor` renders its block once for every element of the association.
@@ -1014,16 +1014,16 @@ then the object will be destroyed. This form allows users to remove addresses:
 @formWith(model: $person as $form)
   Addresses:
   <ul>
-    @bldFieldsFor($form, 'addresses' as $addressesForm)
+    @fieldsFor($form, 'addresses' as $addressesForm)
       <li>
-        @bldCheckBox($addressesForm, '_destroy')
-        @bldLabel($addressesForm, 'kind')
-        @bldTextField($addressesForm, 'kind')
+        @checkBox($addressesForm, '_destroy')
+        @label($addressesForm, 'kind')
+        @textField($addressesForm, 'kind')
         ...
       </li>
-    @endBldFieldsFor
+    @endBlock
   </ul>
-@endFormWith
+@endBlock
 ```
 
 Don't forget to update the permitted params in your controller to also include

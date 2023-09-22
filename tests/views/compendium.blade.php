@@ -5,8 +5,8 @@
     @tag('br')
 @closeTag('p')
 
-@fieldId('post', 'title')
-@fieldName('post', 'title', ['subtitle'])
+@fhFieldId('post', 'title')
+@fhFieldName('post', 'title', ['subtitle'])
 
 @contentTag('div', 'Some inline content?')
 
@@ -14,20 +14,20 @@
     single nested.
     @contentTag('div' as $_)
         double nested
-    @endContentTag
-@endContentTag
+    @endBlock
+@endBlock
 
 @contentTag('form', ['class' => 'nested-form', 'action' => 'http://www.example.com'] as $_)
-    @label('post', 'title' as $_)
+    @fhLabel('post', 'title' as $_)
         <span>This is a label with content</span>
-    @endLabel
+    @endBlock
     @textFieldTag('title', 'A Title', ['class' => 'error'])
 
     @numberFieldTag('qty', 5, ['min' => 0])
 
-    @label('post', 'qty', ['class' => 'small_label'] as $_)
+    @fhLabel('post', 'qty', ['class' => 'small_label'] as $_)
         This is a small label
-    @endLabel
+    @endBlock
     @rangeFieldTag('qty', 5, ['range' => [0,100]])
 
     @hiddenFieldTag('_delete', 0)
@@ -53,7 +53,7 @@
 
     @buttonTag(null as $_)
         <b>Press me</b>
-    @endButtonTag
+    @endBlock
     @buttonTag('Press here!', ['class' => 'cta-button'])
     @buttonTag('Play >', ['class' => 'escaping-btn'])
 
@@ -66,107 +66,116 @@
         @weekdayOptionsForSelect(null, true)
     </select>
 
-    @select('contract', 'type', ['Surface', 'Underground', 'Fly'], [], [])
-    @select('contract', 'country', null, [], [] as $_)
+    @fhSelect('contract', 'type', ['Surface', 'Underground', 'Fly'], [], [])
+    @fhSelect('contract', 'country', null, [], [] as $_)
         @optionsForSelect(['Canada', 'Spain', 'Mexico'], ['disabled' => 'Mexico'])
-    @endSelect
+    @endBlock
 
-    @collectionSelect('contract', 'fave_post', $posts, 'id', 'title', [], ['class' => 'important'])
-    @timeZoneSelect('contract', 'timezone', ['Pacific/Galapagos'], ['model' => timezone_identifiers_list(DateTimeZone::PER_COUNTRY, 'EC')])
-    @weekdaySelect('contract', 'start_day')
+    @fhCollectionSelect('contract', 'fave_post', $posts, 'id', 'title', [], ['class' => 'important'])
+    @fhTimeZoneSelect('contract', 'timezone', ['Pacific/Galapagos'], ['model' => timezone_identifiers_list(DateTimeZone::PER_COUNTRY, 'EC')])
+    @fhWeekdaySelect('contract', 'start_day')
 
-    @fieldsFor('user', $posts[0], [] as $f)
+    @fhFieldsFor('user', $posts[0], [] as $f)
         {{ $f->emailField('email', ['class' => 'important-input']) }}
-        @collectionRadioButtons('post', 'state', [['Draft'], ['Public'], ['Private']], 0, 0)
-        @collectionCheckBoxes('post', 'options', [[100, 'One'], [200, 'Two']], 0, 1, [], [])
+        @fhCollectionRadioButtons('post', 'state', [['Draft'], ['Public'], ['Private']], 0, 0)
+        @fhCollectionCheckBoxes('post', 'options', [[100, 'One'], [200, 'Two']], 0, 1, [], [])
 
-        @collectionCheckBoxes('post', 'options', [[1, 'one'], [2, 'two']], 0, 1, [], [] as $b)
+        @fhCollectionCheckBoxes('post', 'options', [[1, 'one'], [2, 'two']], 0, 1, [], [] as $b)
             <div class="check-wrapper">{{ $b->checkBox() }}</div>
-            @bldLabel($b)
+            @label($b)
 
             <br/>
-        @endCollectionCheckBoxes
+        @endBlock
 
-        @bldLabel($f, 'body', ['class' => 'its-a-label'] as $_)
+        @label($f, 'body', ['class' => 'its-a-label'] as $_)
             Hey, blockhead!
-        @endBldLabel
+        @endBlock
 
-        @bldButton($f)
-        @bldButton($f, 'Create User')
-        @bldButton($f as $_)
+        @button($f)
+        @button($f, 'Create User')
+        @button($f as $_)
             <b>Create</b>
-        @endBldButton
-    @endFieldsFor
-@endContentTag
+        @endBlock
+    @endBlock
+@endBlock
 
 @formWith(url: '/' as $blankForm)
   Form contents
-@endFormWith
+@endBlock
 
 @formWith(url: '/search', options: ['method' => 'get'] as $form)
-  @bldLabel($form, 'query', 'Search for:')
-  @bldTextField($form, 'query')
-  @bldSubmit($form, "Search")
-@endFormWith
+  @label($form, 'query', 'Search for:')
+  @textField($form, 'query')
+  @submit($form, "Search")
+@endBlock
 
 @formWith(url: '/' as $form)
-    @bldTextArea($form, 'message', ['size' => "70x5"])
-    @bldHiddenField($form, 'parent_id', ['value' => "foo"])
-    @bldPasswordField($form, 'password')
-    @bldNumberField($form, 'price', ['in' => [1.0, 20.0], 'step' => 0.5])
-    @bldRangeField($form, 'discount', ['in' => [1, 100]])
-    @bldDateField($form, 'born_on')
-    @bldTimeField($form, 'started_at')
-    @bldDatetimeLocalField($form, 'graduation_day')
-    @bldMonthField($form, 'birthday_month')
-    @bldWeekField($form, 'birthday_week')
-    @bldSearchField($form, 'name')
-    @bldEmailField($form, 'address')
-    @bldTelephoneField($form, 'phone')
-    @bldUrlField($form, 'homepage')
-    @bldColorField($form, 'favorite_color')
-@endFormWith
+    @textArea($form, 'message', ['size' => "70x5"])
+    @hiddenField($form, 'parent_id', ['value' => "foo"])
+    @passwordField($form, 'password')
+    @numberField($form, 'price', ['in' => [1.0, 20.0], 'step' => 0.5])
+    @rangeField($form, 'discount', ['in' => [1, 100]])
+    @dateField($form, 'born_on')
+    @timeField($form, 'started_at')
+    @datetimeLocalField($form, 'graduation_day')
+    @monthField($form, 'birthday_month')
+    @weekField($form, 'birthday_week')
+    @searchField($form, 'name')
+    @emailField($form, 'address')
+    @telephoneField($form, 'phone')
+    @urlField($form, 'homepage')
+    @colorField($form, 'favorite_color')
+@endBlock
 
 @php
   $posts[0]->body = 'My Body';
 @endphp
 
 @formWith(model: $posts[0] as $form)
-  @bldTextField($form, 'title')
-  @bldTextArea($form, 'body', ['size' => "60x10"])
-  @bldSubmit($form)
-@endFormWith
+  @textField($form, 'title')
+  @textArea($form, 'body', ['size' => "60x10"])
+  @submit($form)
+@endBlock
+
+<h2>FieldsFor</h2>
 
 @formWith(model: $posts[0] as $personForm)
-  @bldTextField($personForm, 'name')
-  @fieldsFor('contact_detail', $posts[0]->contact_detail as $contactDetailForm)
-    @bldTextField($contactDetailForm, 'phone_number')
-  @endFieldsFor
-@endFormWith
+  @textField($personForm, 'name')
+  @fhFieldsFor('contact_detail', $posts[0]->contact_detail as $contactDetailForm)
+    @textField($contactDetailForm, 'phone_number')
+  @endBlock
+@endBlock
+@formWith(model: $posts[0] as $personForm)
+  @textField($personForm, 'name')
+  @fieldsFor($personForm, 'contact_detail', $posts[0]->contact_detail as $contactDetailForm)
+    @textField($contactDetailForm, 'phone_number')
+  @endBlock
+@endBlock
+
 
 @formWith(model: ['admin', $posts[0]] as $form)
-@endFormWith
+@endBlock
 
 @formWith(url: "/posts/1", options: ['method' => 'patch'] as $form)
-  @bldButton($form, "Delete", ['formmethod' => 'delete', 'data' => ['confirm' => 'Are you sure?']])
-  @bldButton($form, "Update")
-@endFormWith
+  @button($form, "Delete", ['formmethod' => 'delete', 'data' => ['confirm' => 'Are you sure?']])
+  @button($form, "Update")
+@endBlock
 
 @formWith(url: '/' as $form)
-  @bldSelect($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
-  @bldSelect($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]], ['selected' => "CHI"])
-  @bldSelect($form, 'city', [
+  @select($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
+  @select($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]], ['selected' => "CHI"])
+  @select($form, 'city', [
     "Europe" => [ ["Berlin", "BE"], ["Madrid", "MD"] ],
     "North America" => [ ["Chicago", "CHI"] ],
   ], ['selected' => "CHI"])
-@endFormWith
+@endBlock
 
 @php
   $posts[0]->city = 'MD';
 @endphp
 @formWith(model: $posts[0] as $form)
-  @bldSelect($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
-@endFormWith
+  @select($form, 'city', [["Berlin", "BE"], ["Chicago", "CHI"], ["Madrid", "MD"]])
+@endBlock
 
 @php
   $cities = collect([["Berlin", 3], ["Chicago", 1], ["Madrid", 2]]);
@@ -176,47 +185,47 @@
   \Illuminate\Support\Facades\DB::table('cities')->insert(['id' => 3, 'name' => 'Berlin']);
 @endphp
 @formWith(model: $posts[0] as $form)
-  @bldSelect($form, 'city_id', $cities)
-  @bldCollectionSelect($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
-  @bldCollectionRadioButtons($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
-  @bldCollectionCheckBoxes($form, 'city_ids', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
-@endFormWith
+  @select($form, 'city_id', $cities)
+  @collectionSelect($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
+  @collectionRadioButtons($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
+  @collectionCheckBoxes($form, 'city_ids', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
+@endBlock
 
 @formWith(model: $posts[0] as $form)
-  @bldFileField($form, 'picture')
-@endFormWith
+  @fileField($form, 'picture')
+@endBlock
 
 
 @formWith(url: '/uploads', options: ['multipart' => true] as $form)
   @fileFieldTag('picture')
-@endFormWith
+@endBlock
 
 @formWith(model: $posts[0] as $personForm)
-  @bldTextField($personForm, 'name')
+  @textField($personForm, 'name')
   @foreach ([(object)['id'=>23, 'city'=>'Paris'], (object)['id'=>45, 'city'=>'London']] as $address)
-    @bldFieldsFor($personForm, 'address', ['index' => $address->id] as $addressForm)
-      @bldTextField($addressForm, 'city')
-    @endBldFieldsFor
+    @fieldsFor($personForm, 'address', ['index' => $address->id] as $addressForm)
+      @textField($addressForm, 'city')
+    @endBlock
   @endforeach
-@endFormWith
+@endBlock
 
 @formWith(model: $posts[0] as $personForm)
-  @bldTextField($personForm, 'name')
+  @textField($personForm, 'name')
   @foreach ([(object)['id'=>23, 'city'=>'Paris'], (object)['id'=>45, 'city'=>'London']] as $address)
-    @fieldsFor('person[address][primary]', $address, ['index' => $address->id] as $addressForm)
-      @bldTextField($addressForm, 'city')
-    @endFieldsFor
+    @fhFieldsFor('person[address][primary]', $address, ['index' => $address->id] as $addressForm)
+      @textField($addressForm, 'city')
+    @endBlock
   @endforeach
-@endFormWith
+@endBlock
 
 @formWith(model: $posts[0] as $personForm)
-  @bldTextField($personForm, 'name')
+  @textField($personForm, 'name')
   @foreach ([new \App\Models\Comment(['id'=>23, 'city'=>'Paris']), new \App\Models\Comment(['id'=>45, 'city'=>'London'])] as $address)
-    @fieldsFor('person[address][primary][]', $address as $addressForm)
-      @bldTextField($addressForm, 'city')
-    @endFieldsFor
+    @fhFieldsFor('person[address][primary][]', $address as $addressForm)
+      @textField($addressForm, 'city')
+    @endBlock
   @endforeach
-@endFormWith
+@endBlock
 
 @checkBoxTag('accept')
 

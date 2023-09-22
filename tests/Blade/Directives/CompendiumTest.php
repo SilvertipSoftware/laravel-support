@@ -34,7 +34,7 @@ class CompendiumTest extends TestCase {
         $this->expectNotToPerformAssertions();
         $blade = '';
         foreach (range(1, 100) as $ix) {
-            $blade = "@fieldsFor(\$newPost as \$f)<b>Fields $ix</b>@endFieldsFor\n";
+            $blade = "@fhFieldsFor(\$newPost as \$f)<b>Fields $ix</b>@endBlock\n";
             $this->blade($blade);
         }
     }
@@ -43,7 +43,7 @@ class CompendiumTest extends TestCase {
         $this->expectNotToPerformAssertions();
         $blade = '';
         foreach (range(1, 100) as $ix) {
-            $blade .= "@formWith(model: \$newPost as \$f)<b>Form $ix</b>@endFormWith\n";
+            $blade .= "@formWith(model: \$newPost as \$f)<b>Form $ix</b>@endBlock\n";
         }
 
         $this->blade($blade);

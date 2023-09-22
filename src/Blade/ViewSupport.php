@@ -20,43 +20,106 @@ class ViewSupport {
 
     public static $capturingSections = [];
 
-    public static function registerDirectives($builderPrefix = 'bld') {
-        $excluded = [
-            'registerDirectives'
-        ];
-        $contentTags = [
-            'contentTag' => -1,
-            'cdataSection' => 0,
-            'labelTag' => 0,
-            'buttonTag' => -1,
-            'select' => -1,
-            'formFor' => -1,
-            'formWith' => -1,
-            'fieldsFor' => -1,
-            'label' => -1,
-            'collectionCheckBoxes' => 1,
-            'collectionRadioButtons' => 1,
-            'onBuilder' => -1
-        ];
-        $builderBasedTags = [
+    // These are pre-computed by computeRegistrations() (and tested in UT) to avoid reflection at runtime
+    public static $registrations = [
+        'helper' => [
+            "buttonTag" => ['captures' => true],
+            "collectionCheckBoxes" => ['captures' => true],
+            "collectionRadioButtons" => ['captures' => true],
+            "contentTag" => ['captures' => true],
+            "fields" => ['captures' => true],
+            "fieldsFor" => ['captures' => true],
+            "formWith" => ['captures' => true],
+            "label" => ['captures' => true],
+            "labelTag" => ['captures' => true],
+            "onBuilder" => ['captures' => true],
+            "select" => ['captures' => true],
+            "cdataSection",
+            "checkBox",
+            "checkBoxTag",
+            "classNames",
+            "closeTag",
+            "collectionSelect",
+            "colorField",
+            "colorFieldTag",
+            "dateField",
+            "dateFieldTag",
+            "datetimeField",
+            "datetimeFieldTag",
+            "datetimeLocalField",
+            "domClass",
+            "domId",
+            "emailField",
+            "emailFieldTag",
+            "escapeOnce",
+            "fieldId",
+            "fieldName",
+            "fileField",
+            "fileFieldTag",
+            "formTagHtml",
+            "formTagWithBody",
+            "groupedCollectionSelect",
+            "groupedOptionsForSelect",
+            "hiddenField",
+            "hiddenFieldTag",
+            "monthField",
+            "monthFieldTag",
+            "numberField",
+            "numberFieldTag",
+            "objectForFormBuilder",
+            "optionGroupsFromCollectionForSelect",
+            "optionsForSelect",
+            "optionsFromCollectionForSelect",
+            "passwordField",
+            "passwordFieldTag",
+            "phoneField",
+            "radioButton",
+            "radioButtonTag",
+            "rangeField",
+            "rangeFieldTag",
+            "searchField",
+            "searchFieldTag",
+            "submitTag",
+            "tag",
+            "telephoneField",
+            "textArea",
+            "textAreaTag",
+            "textField",
+            "textFieldTag",
+            "timeField",
+            "timeFieldTag",
+            "timeZoneOptionsForSelect",
+            "timeZoneSelect",
+            "tokenList",
+            "urlField",
+            "urlFieldTag",
+            "urlFor",
+            "weekField",
+            "weekFieldTag",
+            "weekdayOptionsForSelect",
+            "weekdaySelect"
+        ],
+        'builder' => [
             'button' => ['captures' => true],
-            'checkBox',
             'collectionCheckBoxes' => ['captures' => true],
             'collectionRadioButtons' => ['captures' => true],
+            'fields' => ['captures' => true],
+            'fieldsFor' => ['captures' => true],
+            'label' => ['captures' => true],
+            'select' => ['captures' => true],
+            'checkBox',
             'collectionSelect',
             'colorField',
             'dateField',
             'datetimeField',
             'datetimeLocalField',
             'emailField',
-            'fields' => ['captures' => true],
-            'fieldsFor' => ['captures' => true],
             'fieldId',
             'fieldName',
             'fileField',
+            'groupedCollectionSelect',
             'hiddenField',
             'id',
-            'label' => ['captures' => true],
             'monthField',
             'numberField',
             'passwordField',
@@ -64,66 +127,128 @@ class ViewSupport {
             'radioButton',
             'rangeField',
             'searchField',
-            'select',
             'submit',
             'telephoneField',
             'textArea',
             'textField',
             'timeField',
+            'timeZoneSelect',
             'urlField',
             'weekField',
-        ];
+            'weekdaySelect'
+        ]
+    ];
 
-        $reflection = new ReflectionClass(static::class);
-        $methods = array_filter(
-            $reflection->getMethods(ReflectionMethod::IS_STATIC | ReflectionMethod::IS_PUBLIC),
-            function ($m) use ($excluded) {
-                return !in_array($m->name, $excluded);
-            }
-        );
-
-        foreach ($methods as $method) {
-            $name = $method->name;
-            if (preg_match('/^yielding.*$/', $name)) {
-                continue;
-            }
-
-            if (array_key_exists($name, $contentTags)) {
-                static::registerDirective(
-                    static::directiveName($name),
-                    $name,
-                    $contentTags[$name] == 0 ? [] : ['captures' => true]
-                );
-            } else {
-                static::registerDirective(static::directiveName($name), $name);
-            }
-        }
-
-        foreach ($builderBasedTags as $tag => $options) {
+    public static function registerDirectives($helperPrefix = 'fh', $builderPrefix = null) {
+        foreach (static::$registrations['helper'] as $tag => $options) {
             if (is_int($tag)) {
                 $tag = $options;
                 $options = [];
             }
-            $directiveName = $builderPrefix . ucfirst($tag);
-            static::registerDirective(
-                static::directiveName([$builderPrefix, $tag]),
-                'onBuilder',
-                $options,
-                $tag
-            );
+
+            static::registerHelperDirective($tag, $options, $helperPrefix);
         }
+
+        foreach (static::$registrations['builder'] as $tag => $options) {
+            if (is_int($tag)) {
+                $tag = $options;
+                $options = [];
+            }
+
+            static::registerBuilderDirective($tag, $options, $builderPrefix);
+        }
+
+        Blade::directive(static::directiveName('endBlock'), static::capturingEndDirectiveCompiler());
     }
 
-    public static function onBuilder() {
-        $args = func_get_args();
+    public static function computeRegistrations() {
+        $excludedHelperMethods = [
+            'computeRegistrations',
+            'registerDirectives',
+            'registerBuilderDirective',
+            'getBuilderMethods',
+            'isManyRelation',
+            'buildTagValues'
+        ];
+        $excludedBuilderMethods = [
+            '__construct',
+            'setIsMultipart',
+            '__call',
+            'domClass',
+            'domId',
+            'isManyRelation'
+        ];
+
+        $fn = function ($clz, $excluded, $extraMethods = []) {
+            $registrations = [];
+
+            $reflection = new ReflectionClass($clz);
+            $methods = array_filter(
+                $reflection->getMethods(ReflectionMethod::IS_PUBLIC),
+                function ($m) use ($excluded) {
+                    return !in_array($m->name, $excluded) && strpos($m->name, 'yielding') !== 0;
+                }
+            );
+
+            foreach ($methods as $method) {
+                $name = $method->name;
+
+                $options = [];
+
+                $parameters = $method->getParameters();
+                $lastParameterName = count($parameters) > 0
+                    ? ($name != 'onBuilder' ? end($parameters)->name : 'block')
+                    : '';
+
+                if ($lastParameterName === 'block') {
+                    $options['captures'] = true;
+                }
+
+                $registrations[$name] = $options;
+            }
+
+            $extraMethods = array_diff($extraMethods, array_keys($registrations));
+            foreach ($extraMethods as $extra) {
+                $registrations[$extra] = [];
+            }
+
+            ksort($registrations);
+
+            $keys = array_keys($registrations);
+            foreach ($keys as $key) {
+                if ($registrations[$key] === []) {
+                    unset($registrations[$key]);
+                    $registrations[] = $key;
+                }
+            }
+
+
+            return $registrations;
+        };
+
+        return [
+            'helper' => $fn(static::class, $excludedHelperMethods),
+            'builder' => $fn(FormBuilder::class, $excludedBuilderMethods, FormBuilder::$fieldHelpers)
+        ];
+    }
+
+    public static function registerBuilderDirective($name, $options, $prefix) {
+        static::registerDirective(
+            static::directiveName([$prefix, $name]),
+            'onBuilder',
+            $options,
+            $name
+        );
+    }
+
+    public static function onBuilder(...$args) {
         $method = array_shift($args);
         $builder = array_shift($args);
 
         return call_user_func_array([$builder, $method], $args);
     }
 
-    public static function yieldingOnBuilder() {
-        $args = func_get_args();
+    public static function yieldingOnBuilder(...$args) {
         $method = array_shift($args);
         $builder = array_shift($args);
 
@@ -135,6 +260,7 @@ class ViewSupport {
 
     protected static function directiveName(string|array $parts): string {
         $parts = (array)$parts;
+        $parts = array_values(array_filter($parts));
 
         foreach ($parts as $ix => $part) {
             if ($ix > 0) {
@@ -145,24 +271,10 @@ class ViewSupport {
         return implode('', $parts);
     }
 
-    protected static function nonCapturingDirectiveCompiler($name, $baseMethodName, $insertArg) {
-        return function ($expression) use ($baseMethodName, $insertArg) {
-            $expr = trim(Blade::stripParentheses($expression));
-            $code = <<<'INLINECODE'
-                echo HELPERCLASS::BASEMETHODNAME(METHODNAME EXPRESSION);
-            INLINECODE;
-
-            $searchReplace = [
-                'HELPERCLASS' => static::class,
-                'BASEMETHODNAME' => $baseMethodName,
-                'METHODNAME' => ($insertArg ? ("'" . $insertArg . "',") : ''),
-                'EXPRESSION' => $expr
-            ];
-
-            return "<?php "
-                . trim(str_replace(array_keys($searchReplace), array_values($searchReplace), $code))
-                . " ?>";
-        };
+    protected static function ensureDirectiveIsNew($name) {
+        if (array_key_exists($name, Blade::getCustomDirectives())) {
+            throw new RuntimeException('LaravelSupport directive ' . $name . ' is already registered');
+        }
     }
 
     protected static function capturingStartDirectiveCompiler($name, $baseMethodName, $insertArg) {
@@ -208,13 +320,13 @@ class ViewSupport {
         };
     }
 
-    protected static function capturingEndDirectiveCompiler($name) {
-        return function ($expression) use ($name) {
+    protected static function capturingEndDirectiveCompiler() {
+        return function ($expression) {
             $code = <<<'ENDCODE'
                     $__env->stopSection(true);
                     $__lastCaptureData = end(HELPERCLASS::$capturingSections);
-                    if ($__lastCaptureData['name'] !== 'BLOCKNAME') {
-                        throw new \RuntimeException('mismatched end tags (now BLOCKNAME)');
+                    if (!is_array($__lastCaptureData)) {
+                        throw new \RuntimeException('mismatched capture end directives');
                     }
                     ${$__lastCaptureData['obj']}->content = $__env->yieldContent($__lastCaptureData['id']);
                 endforeach;
@@ -223,7 +335,32 @@ class ViewSupport {
             ENDCODE;
 
             return "<?php "
-                . trim(str_replace(['HELPERCLASS', 'BLOCKNAME'], [static::class, $name], $code))
+                . trim(str_replace(['HELPERCLASS'], [static::class], $code))
+                . " ?>";
+        };
+    }
+
+    protected static function isPreferredBuilderHelper($name) {
+        return array_key_exists($name, static::$registrations['builder'])
+            || in_array($name, array_values(static::$registrations['builder']));
+    }
+
+    protected static function nonCapturingDirectiveCompiler($name, $baseMethodName, $insertArg) {
+        return function ($expression) use ($baseMethodName, $insertArg) {
+            $expr = trim(Blade::stripParentheses($expression));
+            $code = <<<'INLINECODE'
+                echo HELPERCLASS::BASEMETHODNAME(METHODNAME EXPRESSION);
+            INLINECODE;
+
+            $searchReplace = [
+                'HELPERCLASS' => static::class,
+                'BASEMETHODNAME' => $baseMethodName,
+                'METHODNAME' => ($insertArg ? ("'" . $insertArg . "',") : ''),
+                'EXPRESSION' => $expr
+            ];
+
+            return "<?php "
+                . trim(str_replace(array_keys($searchReplace), array_values($searchReplace), $code))
                 . " ?>";
         };
     }
@@ -236,16 +373,16 @@ class ViewSupport {
             Blade::directive($name, static::nonCapturingDirectiveCompiler($name, $baseMethodName, $insertArg));
         } else {
             Blade::directive($name, static::capturingStartDirectiveCompiler($name, $baseMethodName, $insertArg));
-
-            $endDirectiveName = static::directiveName(['end', $name]);
-            static::ensureDirectiveIsNew($endDirectiveName);
-            Blade::directive($endDirectiveName, static::capturingEndDirectiveCompiler($name));
         }
     }
 
-    protected static function ensureDirectiveIsNew($name) {
-        if (array_key_exists($name, Blade::getCustomDirectives())) {
-            throw new RuntimeException('LaravelSupport directive ' . $name . ' is already registered');
-        }
+    protected static function registerHelperDirective($name, $options, $prefix) {
+        $prefix = static::isPreferredBuilderHelper($name) ? $prefix : null;
+
+        static::registerDirective(
+            static::directiveName([$prefix, $name]),
+            $name,
+            $options
+        );
     }
 }

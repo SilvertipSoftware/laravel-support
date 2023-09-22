@@ -50,22 +50,21 @@ class FormHelperTest extends TestCase {
 
     public function testFormWith() {
         $this->assertDirectiveExists('formWith');
-        $this->assertDirectiveExists('endFormWith');
         $expected = '<form accept-charset="UTF-8" action="/posts" method="post"></form>';
 
-        $this->assertBlade($expected, "@formWith(\$newPost as \$f)@endFormWith");
+        $this->assertBlade($expected, "@formWith(\$newPost as \$f)@endBlock");
     }
 
     public function testFormWithDefinesBuilderVariable() {
         $expected = '<form accept-charset="UTF-8" action="/posts" method="post">FormBuilder</form>';
 
-        $this->assertBlade($expected, "@formWith(\$newPost as \$f){{ class_basename(\$f) }}@endFormWith");
+        $this->assertBlade($expected, "@formWith(\$newPost as \$f){{ class_basename(\$f) }}@endBlock");
     }
 
     public function testFormWithDoesNotEscapeForBlade() {
         $expected = '<form accept-charset="UTF-8" action="/posts" method="post"><b>Hello form</b></form>';
 
-        $this->assertBlade($expected, "@formWith(\$newPost as \$f)<b>Hello form</b>@endFormWith");
+        $this->assertBlade($expected, "@formWith(\$newPost as \$f)<b>Hello form</b>@endBlock");
     }
 
     public function testFormWithExpectsEndDirective() {
@@ -73,50 +72,42 @@ class FormHelperTest extends TestCase {
         $this->blade("@formWith(\$newPost as \$f)");
     }
 
-    public function testFormWithExpectsEndFormWithDirective() {
-        $this->expectException(ViewException::class);
-        $this->blade("@formWith(\$newPost as \$f)@endLabel");
-    }
-
     public function testFieldsFor() {
-        $this->assertDirectiveExists('fieldsFor');
-        $this->assertDirectiveExists('endFieldsFor');
-        $this->assertDirectiveExists('bldFieldsFor');
-        $this->assertDirectiveExists('endBldFieldsFor');
+        $this->assertDirectiveExists('fhFieldsFor');
 
-        $this->assertBlade('Hello fields', "@fieldsFor('post' as \$f)Hello fields @endFieldsFor");
+        $this->assertBlade('Hello fields', "@fhFieldsFor('post' as \$f)Hello fields @endBlock");
     }
 
     public function testFieldsForDoesNotEscapeForBlade() {
-        $this->assertBlade('<b>Hello fields</b>', "@fieldsFor('post' as \$f)<b>Hello fields</b>@endFieldsFor");
+        $this->assertBlade('<b>Hello fields</b>', "@fhFieldsFor('post' as \$f)<b>Hello fields</b>@endBlock");
     }
 
     public function testFieldsForDefinesBuilderVar() {
-        $this->assertBlade('FormBuilder', "@fieldsFor('post' as \$f){{ class_basename(\$f) }}@endFieldsFor");
+        $this->assertBlade('FormBuilder', "@fhFieldsFor('post' as \$f){{ class_basename(\$f) }}@endBlock");
     }
 
     public function testFieldsForWithJustObject() {
         $this->assertBlade(
             'post[title]=Draft',
-            "@fieldsFor(\$newPost as \$f){{ \$f->fieldName('title') }}={{ \$f->object->title }}@endFieldsFor"
+            "@fhFieldsFor(\$newPost as \$f){{ \$f->fieldName('title') }}={{ \$f->object->title }}@endBlock"
         );
     }
 
     public function testFieldsForWithNameAndObject() {
         $this->assertBlade(
             'art[title]=Draft',
-            "@fieldsFor('art', \$newPost as \$f){{ \$f->fieldName('title') }}={{ \$f->object->title }}@endFieldsFor"
+            "@fhFieldsFor('art', \$newPost as \$f){{ \$f->fieldName('title') }}={{ \$f->object->title }}@endBlock"
         );
     }
 
     public function testFieldsForExpectsEndDirective() {
         $this->expectException(ViewException::class);
-        $this->blade("@fieldsFor('post' as \$f)");
+        $this->blade("@fhFieldsFor('post' as \$f)");
     }
 
     public function testFieldsForExpectsMatchingEndDirective() {
         $this->expectException(ViewException::class);
-        $this->blade("@fieldsFor('post' as \$f) @endLabel");
+        $this->blade("@fhFieldsFor('post' as \$f) @endFhLabel");
     }
 
     public function testFieldsForUnderFormWith() {
@@ -125,10 +116,10 @@ class FormHelperTest extends TestCase {
             . '</form>';
 
         $blade = "@formWith(model: \$newPost as \$f)\n"
-            . "@bldFieldsFor(\$f, 'author' as \$authorFields)\n"
-            . "@bldLabel(\$authorFields, 'name')\n"
-            . "@endBldFieldsFor\n"
-            . "@endFormWith";
+            . "@fieldsFor(\$f, 'author' as \$authorFields)\n"
+            . "@label(\$authorFields, 'name')\n"
+            . "@endBlock\n"
+            . "@endBlock";
 
         $this->assertBlade($expected, $blade);
     }
@@ -142,172 +133,151 @@ class FormHelperTest extends TestCase {
             . '</form>';
 
         $blade = "@formWith(model: \$newPost as \$f)\n"
-            . "@bldFieldsFor(\$f, 'comments' as \$commentFields)\n"
-            . "@bldLabel(\$commentFields, 'body')\n"
-            . "@endBldFieldsFor\n"
-            . "@endFormWith";
+            . "@fieldsFor(\$f, 'comments' as \$commentFields)\n"
+            . "@label(\$commentFields, 'body')\n"
+            . "@endBlock\n"
+            . "@endBlock";
 
         $this->assertBlade($expected, $blade);
     }
 
     public function testLabel() {
-        $this->assertDirectiveExists('label');
-        $this->assertDirectiveExists('endLabel');
-        $this->assertDirectiveExists('bldLabel');
-        $this->assertDirectiveExists('endBldLabel');
+        $this->assertDirectiveExists('fhLabel');
 
         $this->assertBlade(
             '<label for="post_title">Hi </label>',
-            "@label('post', 'title' as \$f)Hi @endLabel"
+            "@fhLabel('post', 'title' as \$f)Hi @endBlock"
         );
     }
 
     public function testLabelDoesNotEscapeForBlade() {
         $this->assertBlade(
             '<label for="post_title"><b>Hello label</b></label>',
-            "@label('post', 'title' as \$f)<b>Hello label</b>@endLabel"
+            "@fhLabel('post', 'title' as \$f)<b>Hello label</b>@endBlock"
         );
     }
 
     public function testLabelWithBuilderAsTranslation() {
         $this->assertBlade(
             '<label for="post_title"><span>Title</span></label>',
-            "@label('post', 'title' as \$translation)@contentTag('span', \$translation)@endLabel"
+            "@fhLabel('post', 'title' as \$translation)@contentTag('span', \$translation)@endBlock"
         );
     }
 
     public function testLabelWithBuilderAsBuilder() {
         $this->assertBlade(
             '<label for="post_title"><span>Title</span></label>',
-            "@label('post', 'title' as \$b)@contentTag('span', \$b->translation())@endLabel"
+            "@fhLabel('post', 'title' as \$b)@contentTag('span', \$b->translation())@endBlock"
         );
     }
 
     public function testLabelInline() {
         $this->assertBlade(
             '<label for="post_title">Title</label>',
-            "@label('post', 'title', 'Title')"
+            "@fhLabel('post', 'title', 'Title')"
         );
     }
 
     public function testLabelInlineWithAttrs() {
         $this->assertBlade(
             '<label for="post_title" class="title_label">Title</label>',
-            "@label('post', 'title', 'Title', ['class' => 'title_label'])"
+            "@fhLabel('post', 'title', 'Title', ['class' => 'title_label'])"
         );
     }
 
     public function testLabelInlineWithValue() {
         $this->assertBlade(
             '<label for="post_title_public">Title</label>',
-            "@label('post', 'title', 'Title', ['value' => 'public'])"
+            "@fhLabel('post', 'title', 'Title', ['value' => 'public'])"
         );
     }
 
     public function testTextField() {
-        $this->assertDirectiveExists('textField');
-        $this->assertDirectiveExists('bldTextField');
-        $this->assertDirectiveNotExists('endTextField');
-        $this->assertDirectiveNotExists('endBldTextField');
+        $this->assertDirectiveExists('fhTextField');
 
         $this->assertBlade(
             '<input id="post_title" name="post[title]" type="text" value="Draft" />',
-            "@textField('post', 'title', ['object' => \$newPost])"
+            "@fhTextField('post', 'title', ['object' => \$newPost])"
         );
 
         $this->assertBlade(
             '<input id="post_title" name="post[title]" type="text" size="20"/>',
-            "@textField('post', 'title', ['size' => 20])"
+            "@fhTextField('post', 'title', ['size' => 20])"
         );
     }
 
     public function testPasswordField() {
-        $this->assertDirectiveExists('passwordField');
-        $this->assertDirectiveExists('bldPasswordField');
-        $this->assertDirectiveNotExists('endPasswordField');
-        $this->assertDirectiveNotExists('endBldPasswordField');
+        $this->assertDirectiveExists('fhPasswordField');
 
         $this->assertBlade(
             '<input id="user_passwd" name="user[passwd]" type="password" />',
-            "@passwordField('user', 'passwd')"
+            "@fhPasswordField('user', 'passwd')"
         );
 
         $this->assertBlade(
             '<input id="user_passwd" name="user[passwd]" type="password" size="20"/>',
-            "@passwordField('user', 'passwd', ['size' => 20])"
+            "@fhPasswordField('user', 'passwd', ['size' => 20])"
         );
     }
 
     public function testHiddenField() {
-        $this->assertDirectiveExists('hiddenField');
-        $this->assertDirectiveExists('bldHiddenField');
-        $this->assertDirectiveNotExists('endHiddenField');
-        $this->assertDirectiveNotExists('endBldHiddenField');
+        $this->assertDirectiveExists('fhHiddenField');
 
         $this->assertBlade(
             '<input id="car_vin" name="car[vin]" type="hidden" autocomplete="off" value="H1234567890" />',
-            "@hiddenField('car', 'vin', ['object' => \$car])"
+            "@fhHiddenField('car', 'vin', ['object' => \$car])"
         );
 
         $this->assertBlade(
             '<input id="user_token" name="user[token]" type="hidden" autocomplete="off" role="hidden"/>',
-            "@hiddenField('user', 'token', ['role' => 'hidden'])"
+            "@fhHiddenField('user', 'token', ['role' => 'hidden'])"
         );
     }
 
     public function testFileField() {
-        $this->assertDirectiveExists('fileField');
-        $this->assertDirectiveExists('bldFileField');
-        $this->assertDirectiveNotExists('endFileField');
-        $this->assertDirectiveNotExists('endBldFileField');
+        $this->assertDirectiveExists('fhFileField');
 
         $this->assertBlade(
             '<input id="car_image" name="car[image]" type="file" />',
-            "@fileField('car', 'image')"
+            "@fhFileField('car', 'image')"
         );
 
         $this->assertBlade(
             '<input id="car_image" name="car[image]" type="file" accept="image/png,image/gif,image/jpeg" />',
-            "@fileField('car', 'image', ['accept' => 'image/png,image/gif,image/jpeg'])"
+            "@fhFileField('car', 'image', ['accept' => 'image/png,image/gif,image/jpeg'])"
         );
     }
 
     public function testTextArea() {
-        $this->assertDirectiveExists('textArea');
-        $this->assertDirectiveExists('bldTextField');
-        $this->assertDirectiveNotExists('endTextField');
-        $this->assertDirectiveNotExists('endBldTextField');
+        $this->assertDirectiveExists('fhTextArea');
 
         $this->assertBlade(
             '<textarea cols="20" rows="40" id="post_body" name="post[body]">',
-            "@textArea('post', 'body', ['size' => '20x40'])"
+            "@fhTextArea('post', 'body', ['size' => '20x40'])"
         );
 
         $this->assertBlade(
             '<textarea id="post_body" name="post[body]">' . "\n" . 'This post exists</textarea>',
-            "@textArea('post', 'body', ['object' => \$existingPost])",
+            "@fhTextArea('post', 'body', ['object' => \$existingPost])",
             [],
             false
         );
 
         $this->assertBlade(
             '<textarea disabled="disabled" id="post_body" name="post[body]">',
-            "@textArea('post', 'body', ['disabled' => true])"
+            "@fhTextArea('post', 'body', ['disabled' => true])"
         );
     }
 
     public function testCheckBox() {
-        $this->assertDirectiveExists('checkBox');
-        $this->assertDirectiveExists('bldCheckBox');
-        $this->assertDirectiveNotExists('endCheckBox');
-        $this->assertDirectiveNotExists('endBldCheckBox');
+        $this->assertDirectiveExists('fhCheckBox');
 
         $expected = '<input type="hidden" name="post[public]" value="0" autocomplete="off" />'
             . '<input type="checkbox" name="post[public]" id="post_public" value="1" />';
 
         $this->assertBlade(
             $expected,
-            "@checkBox('post', 'public')"
+            "@fhCheckBox('post', 'public')"
         );
 
         $this->newPost->public = true;
@@ -316,7 +286,7 @@ class FormHelperTest extends TestCase {
 
         $this->assertBlade(
             $expected,
-            "@checkBox('post', 'public', ['object' => \$newPost])"
+            "@fhCheckBox('post', 'public', ['object' => \$newPost])"
         );
     }
 
@@ -328,7 +298,7 @@ class FormHelperTest extends TestCase {
 
         $this->assertBlade(
             $expected,
-            "@checkBox('post', 'lucky_numbers', ['multiple' => true, 'object' => \$newPost], 72)"
+            "@fhCheckBox('post', 'lucky_numbers', ['multiple' => true, 'object' => \$newPost], 72)"
         );
     }
 
@@ -337,7 +307,7 @@ class FormHelperTest extends TestCase {
 
         $this->assertBlade(
             $expected,
-            "@checkBox('post', 'public', ['include_hidden' => false])"
+            "@fhCheckBox('post', 'public', ['include_hidden' => false])"
         );
     }
 
@@ -347,189 +317,151 @@ class FormHelperTest extends TestCase {
 
         $this->assertBlade(
             $expected,
-            "@checkBox('post', 'public', ['class' => 'slangy'], 'yup', 'nope')"
+            "@fhCheckBox('post', 'public', ['class' => 'slangy'], 'yup', 'nope')"
         );
     }
 
     public function testRadioButton() {
-        $this->assertDirectiveExists('radioButton');
-        $this->assertDirectiveExists('bldRadioButton');
-        $this->assertDirectiveNotExists('endRadioButton');
-        $this->assertDirectiveNotExists('endBldRadioButton');
+        $this->assertDirectiveExists('fhRadioButton');
 
         $expected = '<input type="radio" id="post_category_php" name="post[category]" value="php" />';
-        $this->assertBlade($expected, "@radioButton('post', 'category', 'php')");
+        $this->assertBlade($expected, "@fhRadioButton('post', 'category', 'php')");
 
         $this->newPost->category = 'php';
         $expected = '<input type="radio" id="post_category_php" name="post[category]" value="php" checked="checked" />';
-        $this->assertBlade($expected, "@radioButton('post', 'category', 'php', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhRadioButton('post', 'category', 'php', ['object' => \$newPost])");
 
         $expected = '<input type="radio" id="post_read_no" name="post[read]" value="no" />';
-        $this->assertBlade($expected, "@radioButton('post', 'read', 'no')");
+        $this->assertBlade($expected, "@fhRadioButton('post', 'read', 'no')");
     }
 
     public function testColorField() {
-        $this->assertDirectiveExists('colorField');
-        $this->assertDirectiveExists('bldColorField');
-        $this->assertDirectiveNotExists('endColorField');
-        $this->assertDirectiveNotExists('endBldColorField');
+        $this->assertDirectiveExists('fhColorField');
 
         $expected = '<input type="color" id="post_bgcolor" name="post[bgcolor]" value="#000000" />';
-        $this->assertBlade($expected, "@colorField('post', 'bgcolor')");
+        $this->assertBlade($expected, "@fhColorField('post', 'bgcolor')");
 
         $this->newPost->bgcolor = '#FF0000';
         $expected = '<input type="color" id="post_bgcolor" name="post[bgcolor]" value="#ff0000" />';
-        $this->assertBlade($expected, "@colorField('post', 'bgcolor', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhColorField('post', 'bgcolor', ['object' => \$newPost])");
 
         $this->newPost->bgcolor = 'red';
         $expected = '<input type="color" id="post_bgcolor" name="post[bgcolor]" value="#000000" />';
-        $this->assertBlade($expected, "@colorField('post', 'bgcolor', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhColorField('post', 'bgcolor', ['object' => \$newPost])");
     }
 
     public function testSearchField() {
-        $this->assertDirectiveExists('searchField');
-        $this->assertDirectiveExists('bldSearchField');
-        $this->assertDirectiveNotExists('endSearchField');
-        $this->assertDirectiveNotExists('endBldSearchField');
+        $this->assertDirectiveExists('fhSearchField');
 
         $expected = '<input type="search" id="post_title" name="post[title]" />';
-        $this->assertBlade($expected, "@searchField('post', 'title')");
+        $this->assertBlade($expected, "@fhSearchField('post', 'title')");
 
         $expected = '<input type="search" id="post_title" name="post[title]" autosave="localhost" results="10" />';
-        $this->assertBlade($expected, "@searchField('post', 'title', ['autosave' => true])");
+        $this->assertBlade($expected, "@fhSearchField('post', 'title', ['autosave' => true])");
     }
 
     public function testTelField() {
-        $this->assertDirectiveExists('telephoneField');
-        $this->assertDirectiveNotExists('endTelephoneField');
-        $this->assertDirectiveExists('phoneField');
-        $this->assertDirectiveNotExists('endPhoneField');
+        $this->assertDirectiveExists('fhTelephoneField');
+        $this->assertDirectiveExists('fhPhoneField');
 
         $expected = '<input type="tel" id="user_cell" name="user[cell]" />';
-        $this->assertBlade($expected, "@phoneField('user', 'cell')");
+        $this->assertBlade($expected, "@fhPhoneField('user', 'cell')");
 
         $expected = '<input type="tel" id="user_cell" name="user[cell]" class="missing" />';
-        $this->assertBlade($expected, "@telephoneField('user', 'cell', ['class' => 'missing'])");
+        $this->assertBlade($expected, "@fhTelephoneField('user', 'cell', ['class' => 'missing'])");
     }
 
     public function testDateField() {
-        $this->assertDirectiveExists('dateField');
-        $this->assertDirectiveExists('bldDateField');
-        $this->assertDirectiveNotExists('endDateField');
-        $this->assertDirectiveNotExists('endBldDateField');
+        $this->assertDirectiveExists('fhDateField');
 
         $expected = '<input type="date" id="post_as_of" name="post[as_of]" />';
-        $this->assertBlade($expected, "@dateField('post', 'as_of')");
+        $this->assertBlade($expected, "@fhDateField('post', 'as_of')");
 
         $this->newPost->as_of = Carbon::parse('2023-07-01');
         $expected = '<input type="date" id="post_as_of" name="post[as_of]" value="2023-07-01" />';
-        $this->assertBlade($expected, "@dateField('post', 'as_of', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhDateField('post', 'as_of', ['object' => \$newPost])");
     }
 
     public function testTimeField() {
-        $this->assertDirectiveExists('timeField');
-        $this->assertDirectiveExists('bldTimeField');
-        $this->assertDirectiveNotExists('endTimeField');
-        $this->assertDirectiveNotExists('endBldTimeField');
+        $this->assertDirectiveExists('fhTimeField');
 
         $expected = '<input type="time" id="user_alarm" name="user[alarm]" />';
-        $this->assertBlade($expected, "@timeField('user', 'alarm')");
+        $this->assertBlade($expected, "@fhTimeField('user', 'alarm')");
 
         $expected = '<input type="time" id="user_alarm" name="user[alarm]" value="06:43:32" />';
-        $this->assertBlade($expected, "@timeField('user', 'alarm', ['value' => Carbon\Carbon::parse('06:43:32')])");
+        $this->assertBlade($expected, "@fhTimeField('user', 'alarm', ['value' => Carbon\Carbon::parse('06:43:32')])");
     }
 
     public function testDateTimeField() {
-        $this->assertDirectiveExists('datetimeField');
-        $this->assertDirectiveExists('bldDatetimeField');
-        $this->assertDirectiveNotExists('endDatetimeField');
-        $this->assertDirectiveNotExists('endBldDatetimeField');
+        $this->assertDirectiveExists('fhDatetimeField');
 
         $expected = '<input type="datetime-local" id="post_as_of" name="post[as_of]" />';
-        $this->assertBlade($expected, "@datetimeField('post', 'as_of')");
+        $this->assertBlade($expected, "@fhDatetimeField('post', 'as_of')");
 
         $this->newPost->as_of = Carbon::parse('2023-07-01T06:43:32');
         $expected = '<input type="datetime-local" id="post_as_of" name="post[as_of]" value="2023-07-01T06:43:32" />';
-        $this->assertBlade($expected, "@datetimeField('post', 'as_of', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhDatetimeField('post', 'as_of', ['object' => \$newPost])");
     }
 
     public function testMonthField() {
-        $this->assertDirectiveExists('monthField');
-        $this->assertDirectiveExists('bldMonthField');
-        $this->assertDirectiveNotExists('endMonthField');
-        $this->assertDirectiveNotExists('endBldMonthField');
+        $this->assertDirectiveExists('fhMonthField');
 
         $expected = '<input type="month" id="post_as_of" name="post[as_of]" />';
-        $this->assertBlade($expected, "@monthField('post', 'as_of')");
+        $this->assertBlade($expected, "@fhMonthField('post', 'as_of')");
 
         $this->newPost->as_of = Carbon::parse('2023-07-01T06:43:32');
         $expected = '<input type="month" id="post_as_of" name="post[as_of]" value="2023-07" />';
-        $this->assertBlade($expected, "@monthField('post', 'as_of', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhMonthField('post', 'as_of', ['object' => \$newPost])");
     }
 
     public function testWeekField() {
-        $this->assertDirectiveExists('weekField');
-        $this->assertDirectiveExists('bldWeekField');
-        $this->assertDirectiveNotExists('endWeekField');
-        $this->assertDirectiveNotExists('endBldWeekField');
+        $this->assertDirectiveExists('fhWeekField');
 
         $expected = '<input type="week" id="post_as_of" name="post[as_of]" />';
-        $this->assertBlade($expected, "@weekField('post', 'as_of')");
+        $this->assertBlade($expected, "@fhWeekField('post', 'as_of')");
 
         $this->newPost->as_of = Carbon::parse('1984-05-12');
         $expected = '<input type="week" id="post_as_of" name="post[as_of]" value="1984-W19" />';
-        $this->assertBlade($expected, "@weekField('post', 'as_of', ['object' => \$newPost])");
+        $this->assertBlade($expected, "@fhWeekField('post', 'as_of', ['object' => \$newPost])");
     }
 
     public function testUrlField() {
-        $this->assertDirectiveExists('urlField');
-        $this->assertDirectiveExists('bldUrlField');
-        $this->assertDirectiveNotExists('endUrlField');
-        $this->assertDirectiveNotExists('endBldUrlField');
+        $this->assertDirectiveExists('fhUrlField');
 
         $expected = '<input type="url" id="post_slug" name="post[slug]" />';
-        $this->assertBlade($expected, "@urlField('post', 'slug')");
+        $this->assertBlade($expected, "@fhUrlField('post', 'slug')");
 
         $expected = '<input type="url" id="post_slug" name="post[slug]" class="int-link" />';
-        $this->assertBlade($expected, "@urlField('post', 'slug', ['class' => 'int-link'])");
+        $this->assertBlade($expected, "@fhUrlField('post', 'slug', ['class' => 'int-link'])");
     }
 
     public function testEmailField() {
-        $this->assertDirectiveExists('emailField');
-        $this->assertDirectiveExists('bldEmailField');
-        $this->assertDirectiveNotExists('endEmailField');
-        $this->assertDirectiveNotExists('endBldEmailField');
+        $this->assertDirectiveExists('fhEmailField');
 
         $expected = '<input type="email" id="post_contact" name="post[contact]" />';
-        $this->assertBlade($expected, "@emailField('post', 'contact')");
+        $this->assertBlade($expected, "@fhEmailField('post', 'contact')");
 
         $expected = '<input type="email" id="post_contact" name="post[contact]" class="int-link" />';
-        $this->assertBlade($expected, "@emailField('post', 'contact', ['class' => 'int-link'])");
+        $this->assertBlade($expected, "@fhEmailField('post', 'contact', ['class' => 'int-link'])");
     }
 
     public function testNumberField() {
-        $this->assertDirectiveExists('numberField');
-        $this->assertDirectiveExists('bldNumberField');
-        $this->assertDirectiveNotExists('endNumberField');
-        $this->assertDirectiveNotExists('endBldNumberField');
+        $this->assertDirectiveExists('fhNumberField');
 
         $expected = '<input type="number" id="post_readers" name="post[readers]" />';
-        $this->assertBlade($expected, "@numberField('post', 'readers')");
+        $this->assertBlade($expected, "@fhNumberField('post', 'readers')");
 
         $expected = '<input type="number" id="post_readers" name="post[readers]" min="0" />';
-        $this->assertBlade($expected, "@numberField('post', 'readers', ['min' => 0])");
+        $this->assertBlade($expected, "@fhNumberField('post', 'readers', ['min' => 0])");
     }
 
     public function testRangeField() {
-        $this->assertDirectiveExists('rangeField');
-        $this->assertDirectiveExists('bldRangeField');
-        $this->assertDirectiveNotExists('endRangeField');
-        $this->assertDirectiveNotExists('endBldRangeField');
+        $this->assertDirectiveExists('fhRangeField');
 
         $expected = '<input type="range" id="post_readers" name="post[readers]" />';
-        $this->assertBlade($expected, "@rangeField('post', 'readers')");
+        $this->assertBlade($expected, "@fhRangeField('post', 'readers')");
 
         $expected = '<input type="range" id="post_readers" name="post[readers]" min="0" max="100" />';
-        $this->assertBlade($expected, "@rangeField('post', 'readers', ['in' => [0,100]])");
+        $this->assertBlade($expected, "@fhRangeField('post', 'readers', ['in' => [0,100]])");
     }
 }
