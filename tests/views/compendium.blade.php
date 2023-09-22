@@ -184,11 +184,21 @@
   \Illuminate\Support\Facades\DB::table('cities')->insert(['id' => 2, 'name' => 'Madrid']);
   \Illuminate\Support\Facades\DB::table('cities')->insert(['id' => 3, 'name' => 'Berlin']);
 @endphp
+
+<h2>--- Collection Helpers on Builder ---</h2>
+
 @formWith(model: $posts[0] as $form)
   @select($form, 'city_id', $cities)
   @collectionSelect($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
   @collectionRadioButtons($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
+  @collectionRadioButtons($form, 'city_id', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name' as $b)
+    <div>@label($b)</div><div>{{ $b->radioButton() }}</div>
+  @endBlock
+
   @collectionCheckBoxes($form, 'city_ids', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name')
+  @collectionCheckBoxes($form, 'city_ids', \Illuminate\Support\Facades\DB::table('cities')->orderBy('name'), 'id', 'name' as $b)
+    <div>{{ $b->checkBox() }}</div>
+  @endBlock
 @endBlock
 
 @formWith(model: $posts[0] as $form)

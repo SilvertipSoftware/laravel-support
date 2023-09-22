@@ -378,6 +378,54 @@ class FormBuilder {
         return ($this->template)::buttonTag($value, $options);
     }
 
+    public function yieldingCollectionCheckBoxes(
+        $method,
+        $collection,
+        $valueMethod,
+        $textMethod,
+        $options = [],
+        $htmlOptions = [],
+        $yield = true
+    ) {
+        $generator = ($this->template)::yieldingCollectionCheckBoxes(
+            $this->objectName,
+            $method,
+            $collection,
+            $valueMethod,
+            $textMethod,
+            $this->objectifyOptions($options),
+            array_merge($this->defaultHtmlOptions, $htmlOptions),
+            $yield
+        );
+        yield from $generator;
+
+        return $generator->getReturn();
+    }
+
+    public function yieldingCollectionRadioButtons(
+        $method,
+        $collection,
+        $valueMethod,
+        $textMethod,
+        $options = [],
+        $htmlOptions = [],
+        $yield = true
+    ) {
+        $generator = ($this->template)::yieldingCollectionRadioButtons(
+            $this->objectName,
+            $method,
+            $collection,
+            $valueMethod,
+            $textMethod,
+            $this->objectifyOptions($options),
+            array_merge($this->defaultHtmlOptions, $htmlOptions),
+            $yield
+        );
+        yield from $generator;
+
+        return $generator->getReturn();
+    }
+
     public function yieldingLabel($method, $text = null, $options = [], $yield = true) {
         $generator = ($this->template)::yieldingLabel(
             $this->objectName,
