@@ -3,13 +3,18 @@
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
 use Exception;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
 
 trait Transactions {
 
-    public static function createOrFail(array $attributes = []) {
-        return tap(static::newModelInstance($attributes), function ($instance) {
+    public static function createOrFail(array|Arrayable $attributes = []) {
+        $attrs = $attributes instanceof Arrayable
+            ? $attributes->toArray()
+            : $attributes;
+
+        return tap(static::newModelInstance($attrs), function ($instance) {
             $instance->saveOrFail();
         });
     }
@@ -44,10 +49,14 @@ trait Transactions {
         return $this->transactionalSaveOrFail($options);
     }
 
-    public function updateOrFail(array $attributes = [], array $options = []) {
+    public function updateOrFail(array|Arrayable $attributes = [], array $options = []) {
         if (!$this->exists) {
             return false;
         }
+
+        $attrs = $attributes instanceof Arrayable
+            ? $attributes->toArray()
+            : $attributes;
 
         return $this->fill($attributes)->saveOrFail($options);
     }

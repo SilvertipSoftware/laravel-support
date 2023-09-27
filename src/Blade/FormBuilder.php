@@ -29,6 +29,8 @@ class FormBuilder {
     public $index;
     public $isMultipart;
 
+    protected static $booted = [];
+
     protected $defaultHtmlOptions;
     protected $defaultOptions;
     protected $emittedHiddenId = false;
@@ -40,6 +42,8 @@ class FormBuilder {
         protected $template,
         public $options
     ) {
+        $this->bootIfNotBooted();
+
         $this->defaultOptions = $options
             ? Arr::only($options, ['index', 'namespace', 'skip_default_ids', 'allow_method_names_outside_object'])
             : [];
@@ -300,6 +304,17 @@ class FormBuilder {
             $this->objectifyOptions($options),
             array_merge($this->defaultHtmlOptions, $htmlOptions)
         );
+    }
+
+    protected static function boot() {
+    }
+
+    protected function bootIfNotBooted() {
+        if (!isset(static::$booted[static::class])) {
+            static::$booted[static::class] = true;
+
+            static::boot();
+        }
     }
 
     protected function isNestedAttributesRelation($name) {

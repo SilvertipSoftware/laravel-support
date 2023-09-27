@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 
 trait CollectionHelpers {
@@ -41,7 +42,7 @@ trait CollectionHelpers {
 
             $accept = $currentValue instanceof Closure
                 ? $currentValue($item)
-                : in_array($value, (array)$currentValue);
+                : collect($currentValue)->contains($value);
 
             if ($accept) {
                 $htmlOptions[$option] = true;

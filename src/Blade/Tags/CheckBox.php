@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 
 class CheckBox extends Base {
@@ -67,6 +68,8 @@ class CheckBox extends Base {
             return $value === $this->checkedValue;
         } elseif (is_array($value)) {
             return in_array($this->checkedValue, $value);
+        } elseif ($value instanceof Collection) {
+            return $value->contains($this->checkedValue);
         }
 
         return $value == $this->checkedValue;

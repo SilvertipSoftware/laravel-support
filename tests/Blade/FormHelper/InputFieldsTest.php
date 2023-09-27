@@ -417,6 +417,25 @@ class InputFieldsTest extends TestCase {
         );
     }
 
+    public function testCheckBoxWithMultipleBehaviorAndCollectionValue() {
+        $this->post->comment_ids = collect([2, 3]);
+
+        $expected = '<input name="post[comment_ids][]" type="hidden" value="0" autocomplete="off" />'
+            . '<input id="post_comment_ids_1" name="post[comment_ids][]" type="checkbox" value="1" />';
+        $this->assertDomEquals(
+            $expected,
+            static::checkBox('post', 'comment_ids', ['multiple' => true, 'object' => $this->post], 1)
+        );
+
+        $expected = '<input name="post[comment_ids][]" type="hidden" value="0" autocomplete="off" />'
+            . '<input checked="checked" id="post_comment_ids_3" name="post[comment_ids][]" type="checkbox"'
+            . ' value="3" />';
+        $this->assertDomEquals(
+            $expected,
+            static::checkBox('post', 'comment_ids', ['multiple' => true, 'object' => $this->post], 3)
+        );
+    }
+
     public function testCheckBoxWithMultipleBehaviorAndIndex() {
         $this->post->comment_ids = [2, 3];
 
