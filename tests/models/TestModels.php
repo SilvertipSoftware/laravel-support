@@ -72,6 +72,10 @@ class Eye extends Model {
         return $this->hasOne(Iris::class);
     }
 
+    public function rejecting_iris() {
+        return $this->hasOne(Iris::class);
+    }
+
     public function update_and_destroy_iris() {
         return $this->hasOne(Iris::class);
     }
@@ -87,14 +91,23 @@ class Eye extends Model {
         static::addNestedAttribute('iris', ['allow_destroy' => true]);
         static::addNestedAttribute('permanent_iris', ['allow_destroy' => false]);
         static::addNestedAttribute('update_only_iris', ['update_only' => true]);
+        static::addNestedAttribute('rejecting_iris', ['reject_if' => 'call:rejectHazelIris', 'allow_destroy' => true]);
         static::addNestedAttribute('update_and_destroy_iris', ['update_only' => true, 'allow_destroy' => true]);
-        static::addNestedAttribute('cones', ['allow_destroy' => true]);
+        static::addNestedAttribute('cones', ['allow_destroy' => true, 'reject_if' => 'call:rejectNonColorCones']);
 
         Eye::created(function ($eye) {
             $eye->createdFlagStack[] = $eye->iris
                 ? !$eye->iris->exists
                 : 'UNSET';
         });
+    }
+
+    protected function rejectHazelIris($attrs) {
+        return Arr::get($attrs, 'color') === 'hazel';
+    }
+
+    protected function rejectNonColorCones($attrs) {
+        return Arr::get($attrs, 'color') === 'grey_scale';
     }
 }
 
@@ -121,6 +134,10 @@ class Retina extends Model {
         return $this->belongsTo(Eye::class, 'eye_id');
     }
 
+    public function rejecting_eye() {
+        return $this->belongsTo(Eye::class, 'eye_id');
+    }
+
     public function update_and_destroy_eye() {
         return $this->belongsTo(Eye::class, 'eye_id');
     }
@@ -131,7 +148,12 @@ class Retina extends Model {
         static::addNestedAttribute('eye', ['allow_destroy' => true]);
         static::addNestedAttribute('permanent_eye', ['allow_destroy' => false]);
         static::addNestedAttribute('update_only_eye', ['update_only' => true]);
+        static::addNestedAttribute('rejecting_eye', ['reject_if' => 'call:rejectMiddleEyes', 'allow_destroy' => true]);
         static::addNestedAttribute('update_and_destroy_eye', ['allow_destroy' => true, 'update_only' => true]);
+    }
+
+    protected function rejectMiddleEyes($attrs) {
+        return Arr::get($attrs, 'side') === 'middle';
     }
 }
 

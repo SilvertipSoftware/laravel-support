@@ -195,6 +195,39 @@ class NestedAttributesBelongsToTest extends DatabaseTestCase {
         $this->assertEquals($eye->id, $retina->fresh()->eye->id);
     }
 
+    public function testRejectsNewWhenRejectIf() {
+        $this->eye->delete();
+        $retina = $this->retina->fresh();
+        $this->assertNull($retina->eye);
+
+        $retina->updateOrFail([
+            'rejecting_eye_attributes' => ['side' => 'middle']
+        ]);
+
+        $this->assertNull($retina->fresh()->eye);
+    }
+
+    public function testRejectsExistingWhenRejectIf() {
+        $this->retina->updateOrFail([
+            'rejecting_eye_attributes' => ['id' => $this->eye->id, 'side' => 'middle']
+        ]);
+
+        $this->assertEquals('left', $this->eye->fresh()->side);
+        $this->assertEquals($this->eye->id, $this->retina->fresh()->eye->id);
+    }
+
+    public function testDestroysEvenWhenRejectIf() {
+        $retina = $this->retina->fresh();
+
+        $retina->updateOrFail([
+            'rejecting_eye_attributes' => ['id' => $this->eye->id, 'side' => 'middle', '_destroy' => true]
+        ]);
+
+        $this->assertNull(Eye::find($this->eye->id));
+        $this->assertNull($retina->fresh()->eye_id);
+        $this->assertNull($retina->fresh()->eye);
+    }
+
     public function testDestroysWhenUpdateOnlyAndIdGiven() {
         $this->eye->delete();
         $retina = $this->retina->fresh();

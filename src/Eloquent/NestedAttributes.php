@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
+use Closure;
 use Illuminate\Support\Arr;
 use RuntimeException;
 
@@ -28,19 +31,32 @@ trait NestedAttributes {
         return parent::setAttribute($key, $value);
     }
 
-    protected static function addNestedAttribute($names, $opts = []) {
+    protected static function addNestedAttribute($names, $options = []) {
         $nestedAttributes = Arr::get(static::$acceptsNestedAttributesFor, static::class, []);
+        $options = array_merge(['allow_destroy' => false, 'update_only' => false], $options);
 
         foreach ((array)$names as $name) {
             if (!method_exists(static::class, $name)) {
                 throw new RuntimeException('Relation ' . $name . ' does not exist on ' . static::class);
             }
 
-            $nestedAttributes[$name] = Arr::only($opts, ['update_only', 'allow_destroy', 'reject_if']);
+            if (Arr::get($options, 'reject_if') === 'all_blank') {
+                $options['reject_if'] = function ($attributes) {
+                    $nonBlank = Arr::first($attributes, function ($value, $key) {
+                        return $key !== '_destroy' && !empty($value);
+                    });
+                };
+            }
+
+            $nestedAttributes[$name] = Arr::only($options, ['update_only', 'allow_destroy', 'reject_if']);
             static::addAutosavedRelation($name);
         }
 
         static::$acceptsNestedAttributesFor[static::class] = $nestedAttributes;
+    }
+
+    protected function allowsDestroy(string $relationName): bool {
+        return (bool) Arr::get($this->getOptionsForNestedAttributes($relationName), 'allow_destroy');
     }
 
     protected function assignNestedAttributes($relationName, $attrs) {
@@ -74,11 +90,13 @@ trait NestedAttributes {
             || ($existingRecord && (Arr::get($attrs, 'id') == $existingRecord->getKey()));
 
         if ($updateOnlyOrId && $existingRecord && $updateOnlyOrMatchingId) {
-            $this->assignOrMarkForDestruction($existingRecord, $attrs, $options);
-            $existingRecord->setAttribute($relation->getForeignKeyName(), $relation->getParentKey());
+            if (!$this->callRejectIf($relationName, $attrs)) {
+                $this->assignOrMarkForDestruction($existingRecord, $attrs, $options);
+                $existingRecord->setAttribute($relation->getForeignKeyName(), $relation->getParentKey());
+            }
         } elseif (Arr::get($attrs, 'id')) {
             throw new RuntimeException('Cannot set nested attributes for ' . $relationName . ' using id');
-        } else {
+        } elseif (!$this->rejectNewRecord($relationName, $attrs)) {
             $fillableAttributes = Arr::except($attrs, $this->getUnassignableKeys());
 
             if ($existingRecord && !$existingRecord->exists) {
@@ -101,14 +119,16 @@ trait NestedAttributes {
             || ($existingRecord && (Arr::get($attrs, 'id') == $existingRecord->getKey()));
 
         if ($updateOnlyOrId && $existingRecord && $updateOnlyOrMatchingId) {
-            $this->assignOrMarkForDestruction($existingRecord, $attrs, $options);
-            if ($existingRecord->isMarkedForDestruction()) {
-                $foreignKey = $relation->getForeignKeyName();
-                $this->{$foreignKey} = null;
+            if (!$this->callRejectIf($relationName, $attrs)) {
+                $this->assignOrMarkForDestruction($existingRecord, $attrs, $options);
+                if ($existingRecord->isMarkedForDestruction()) {
+                    $foreignKey = $relation->getForeignKeyName();
+                    $this->{$foreignKey} = null;
+                }
             }
         } elseif (Arr::get($attrs, 'id')) {
             throw new RuntimeException('Cannot set nested attributes for ' . $relationName . ' using id');
-        } else {
+        } elseif (!$this->rejectNewRecord($relationName, $attrs)) {
             $fillableAttributes = Arr::except($attrs, $this->getUnassignableKeys());
 
             if ($existingRecord && !$existingRecord->exists) {
@@ -142,7 +162,7 @@ trait NestedAttributes {
 
         foreach ($attrsArray as $attrs) {
             if (empty($attrs['id'])) {
-                if (!Arr::get($attrs, '_destroy')) {
+                if (!$this->rejectNewRecord($relationName, $attrs)) {
                     $newRecord = $relation->make(Arr::except($attrs, $this->getUnassignableKeys()));
                     $existingRecords[] = $newRecord;
                 }
@@ -151,7 +171,9 @@ trait NestedAttributes {
                     return $model->getKey() == $attrs['id'];
                 });
                 if ($existingRecord) {
-                    $this->assignOrMarkForDestruction($existingRecord, $attrs, $options);
+                    if (!$this->callRejectIf($relationName, $attrs)) {
+                        $this->assignOrMarkForDestruction($existingRecord, $attrs, $options);
+                    }
                 } else {
                     throw new RuntimeException("Could not find related $relationName with id ".$attrs['id']);
                 }
@@ -169,6 +191,22 @@ trait NestedAttributes {
         }
     }
 
+    protected function callRejectIf(string $relationName, array $attributes): bool {
+        if ($this->willBeDestroyed($relationName, $attributes)) {
+            return false;
+        }
+
+        $callback = Arr::get($this->getOptionsForNestedAttributes($relationName), 'reject_if');
+
+        if ($callback instanceof Closure) {
+            return $callback($attributes);
+        } elseif (is_string($callback) && preg_match('/^call:(.+)$/', $callback, $matches)) {
+            return $this->{$matches[1]}($attributes);
+        }
+
+        return false;
+    }
+
     protected function getOptionsForNestedAttributes($name) {
         return static::$acceptsNestedAttributesFor[static::class][$name];
     }
@@ -180,9 +218,16 @@ trait NestedAttributes {
         ];
     }
 
-    protected function hasDestroyFlag($attrs) {
-        return isset($attrs['_destroy'])
-            ? !!$attrs['_destroy']
-            : false;
+    protected function hasDestroyFlag(array $attrs): bool {
+        return (bool) Arr::get($attrs, '_destroy', false);
+    }
+
+    protected function rejectNewRecord(string $relationName, array $attributes): bool {
+        return $this->willBeDestroyed($relationName, $attributes)
+            || $this->callRejectIf($relationName, $attributes);
+    }
+
+    protected function willBeDestroyed(string $relationName, array $attributes): bool {
+        return $this->allowsDestroy($relationName) && $this->hasDestroyFlag($attributes);
     }
 }

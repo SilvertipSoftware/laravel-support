@@ -23,6 +23,7 @@ class Translator {
     public function translate() {
         $key = ($this->scope ? ($this->scope . '.') : '') . $this->objectName . '.' . $this->methodAndValue;
         $trans = trans($key);
+
         if ($trans === $key) {
             $trans = $this->i18nDefault() ?: $this->humanAttributeName();
         }
@@ -31,14 +32,14 @@ class Translator {
     }
 
     private function i18nDefault() {
-        $trans = null;
+        $trans = '';
 
         if ($this->model) {
             $modelKey = $this->model->modelName()->i18n_key;
             $key = ($this->scope ? ($this->scope . '.') : '') . $modelKey . '.' . $this->methodAndValue;
             $trans = trans($key);
             if ($trans === $key) {
-                $trans = null;
+                $trans = '';
             }
         }
 

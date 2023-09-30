@@ -513,22 +513,6 @@ class FormBuilder {
         $emitHiddenId = $object && $object->exists
             && Arr::get($fieldsOptions, 'include_id', Arr::get($this->options, 'include_id', true));
 
-        $fn = function ($f) use ($emitHiddenId) {
-            $obj = (object)[
-                'builder' => $f,
-                'content' => null
-            ];
-            yield $obj;
-            $output = $obj->content;
-
-            // @phpstan-ignore-next-line
-            if ($output && $emitHiddenId && !$f->emittedHiddenId) {
-                $output .= ($this->template)::hiddenField('id');
-            }
-
-            return $output;
-        };
-
         $generator = ($this->template)::yieldingFieldsFor($name, $object, $fieldsOptions);
         foreach ($generator as $obj) {
             $obj2 = (object)[
@@ -536,7 +520,12 @@ class FormBuilder {
                 'content' => null
             ];
             yield $obj2;
-            $obj->content = $obj2->content;
+            $output = $obj2->content;
+            // @phpstan-ignore-next-line
+            if ($output && $emitHiddenId && !$obj->builder->emittedHiddenId) {
+                $output .= $obj->builder->hiddenField('id');
+            }
+            $obj->content = $output;
         }
 
         return $generator->getReturn();

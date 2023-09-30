@@ -190,6 +190,36 @@ class NestedAttributesHasOneTest extends DatabaseTestCase {
         $this->assertEquals($iris->id, $eye->fresh()->iris->id);
     }
 
+    public function testRejectsNewWhenRejectIf() {
+        $this->iris->delete();
+        $eye = $this->eye->fresh();
+        $this->assertNull($eye->iris);
+
+        $eye->updateOrFail([
+            'rejecting_iris_attributes' => ['color' => 'hazel']
+        ]);
+
+        $this->assertNull($eye->iris);
+    }
+
+    public function testRejectsExistingWhenRejectIf() {
+        $this->eye->updateOrFail([
+            'rejecting_iris_attributes' => ['id' => $this->iris->id, 'color' => 'hazel']
+        ]);
+
+        $this->assertEquals('honey', $this->iris->fresh()->color);
+        $this->assertEquals($this->iris->id, $this->eye->fresh()->iris->id);
+    }
+
+    public function testDestroysEvenWhenRejectIf() {
+        $this->eye->updateOrFail([
+            'rejecting_iris_attributes' => ['id' => $this->iris->id, 'color' => 'hazel', '_destroy' => true]
+        ]);
+
+        $this->assertNull($this->eye->fresh()->iris);
+        $this->assertNull($this->iris->fresh());
+    }
+
     public function testDestroysWhenUpdateOnlyAndIdGiven() {
         $this->iris->delete();
         $eye = $this->eye->fresh();

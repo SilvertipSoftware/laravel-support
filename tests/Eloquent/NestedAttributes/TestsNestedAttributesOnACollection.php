@@ -75,6 +75,17 @@ trait TestsNestedAttributesOnACollection {
         $this->assertEquals('pinkish', $eye->{$this->relationName}[1]->color);
     }
 
+    public function testItIgnoresNewModelsWhenRejectIf() {
+        $this->eye->{$this->relationName}()->delete();
+        $eye = $this->eye->fresh();
+
+        $eye->{$this->attributesName()} = [
+            ['color' => 'grey_scale']
+        ];
+
+        $this->assertEquals(0, $eye->{$this->relationName}->count());
+    }
+
     public function testItFiltersDestroyFlag() {
         $this->eye->{$this->attributesName()} = [
             ['_destroy' => false]
@@ -109,6 +120,17 @@ trait TestsNestedAttributesOnACollection {
         );
     }
 
+    public function testRejectsNewWhenRejectIf() {
+        $this->alternateParams[$this->attributesName()][] = ['color' => 'grey_scale'];
+
+        $this->eye->updateOrFail($this->alternateParams);
+
+        $this->assertEquals(
+            ['green', 'rainbow'],
+            $this->eye->fresh()->{$this->relationName}->pluck('color')->all()
+        );
+    }
+
     public function testDestroysExistingRecordWithMatchingIdAndDestroyIsTruthy() {
         foreach ([1, '1', true] as $ix => $truthy) {
             $this->resetQueries();
@@ -135,6 +157,16 @@ trait TestsNestedAttributesOnACollection {
 
             $this->assertEquals($numChildren, $this->eye->{$this->relationName}()->count());
         }
+    }
+
+    public function testDestroysEvenWhenRejectIf() {
+        $numChildren = $this->eye->{$this->relationName}()->count();
+
+        $this->alternateParams[$this->attributesName()][0]['_destroy'] = true;
+        $this->alternateParams[$this->attributesName()][0]['color'] = 'grey_scale';
+        $this->eye->updateOrFail($this->alternateParams);
+
+        $this->assertEquals($numChildren - 1, $this->eye->{$this->relationName}()->count());
     }
 
     public function testDoesNotDestroyModelsUntilCommit() {
