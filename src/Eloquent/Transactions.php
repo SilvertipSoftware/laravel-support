@@ -49,12 +49,23 @@ trait Transactions {
         return $this->transactionalSaveOrFail($options);
     }
 
+    public function update(array|Arrayable $attributes = [], array $options = []) {
+        $ret = false;
+
+        try {
+            $ret = $this->updateOrFail($attributes, $options);
+        } catch (Exception $ex) {
+        }
+
+        return $ret;
+    }
+
     public function updateOrFail(array|Arrayable $attributes = [], array $options = []) {
         if (!$this->exists) {
             return false;
         }
 
-        $attrs = $attributes instanceof Arrayable
+        $attributes = $attributes instanceof Arrayable
             ? $attributes->toArray()
             : $attributes;
 
