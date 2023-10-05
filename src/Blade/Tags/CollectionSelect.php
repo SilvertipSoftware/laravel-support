@@ -4,34 +4,33 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
+use Closure;
+use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 
 class CollectionSelect extends Base {
 
-    protected $collection;
-    protected $valueMethod;
-    protected $textMethod;
-    protected $htmlOptions;
-
+    /**
+     * @param array<mixed>|Collection|QueryBuilder $collection
+     * @param array<string,mixed> $options
+     * @param array<string,mixed> $htmlOptions
+     */
     public function __construct(
-        $objectName,
-        $methodName,
-        $templateObject,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options,
-        $htmlOptions
+        string $objectName,
+        string $methodName,
+        string $templateObject,
+        protected array|Collection|QueryBuilder $collection,
+        protected string|int|Closure $valueMethod,
+        protected string|int|Closure $textMethod,
+        array $options,
+        protected array $htmlOptions
     ) {
-        $this->collection = $collection;
-        $this->valueMethod = $valueMethod;
-        $this->textMethod = $textMethod;
-        $this->htmlOptions = $htmlOptions;
-
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render() {
+    public function render(): HtmlString {
         $optionTagsOptions = [
             'selected' => Arr::get($this->options, 'selected', $this->value()),
             'disabled' => Arr::get($this->options, 'disabled')

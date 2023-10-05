@@ -6,11 +6,11 @@ use SilvertipSoftware\LaravelSupport\Eloquent\Model;
 
 class User extends Model {
 
-    protected $validationRules = [
+    protected array $validationRules = [
         'name' => ['required']
     ];
 
-    public static function i18nScope() {
+    public static function i18nScope(): string {
         return 'security';
     }
 

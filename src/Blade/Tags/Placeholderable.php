@@ -9,7 +9,7 @@ use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
 
 trait Placeholderable {
 
-    public function __construct(...$args) {
+    public function __construct(mixed ...$args) {
         parent::__construct(...$args);
 
         $tagValue = Arr::get($this->options, 'placeholder');

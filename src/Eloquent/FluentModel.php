@@ -2,6 +2,7 @@
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Concerns\HasEvents;
 use Illuminate\Support\Fluent;
 use Illuminate\Support\Str;
@@ -13,13 +14,18 @@ class FluentModel extends Fluent {
         Translation,
         Validation;
 
-    public function __construct($attrsOrParams = []) {
-        $attrs = $attrsOrParams instanceof Parameters ? $attrsOrParams->toArray() : $attrsOrParams;
+    /**
+     * @param array<string,mixed>|Arrayable $attributes
+     */
+    public function __construct(array|Arrayable $attributes = []) {
+        $attributes = $attributes instanceof Arrayable
+            ? $attributes->toArray()
+            : $attributes;
 
-        parent::__construct($attrs);
+        parent::__construct($attributes);
     }
 
-    public function get($key, $default = null) {
+    public function get(mixed $key, mixed $default = null): mixed {
         $method = 'get' . Str::studly($key) . 'Attribute';
 
         if (method_exists($this, $method)) {
@@ -29,7 +35,7 @@ class FluentModel extends Fluent {
         return parent::get($key, $default);
     }
 
-    public function offsetSet($key, $value): void {
+    public function offsetSet(mixed $key, mixed $value): void {
         $method = 'set' . Str::studly($key) . 'Attribute';
 
         if (method_exists($this, $method)) {
@@ -39,14 +45,17 @@ class FluentModel extends Fluent {
         }
     }
 
-    public function toModel() {
+    public function toModel(): Model|FluentModel {
         return $this;
     }
 
-    protected function validateAutosavedRelations() {
+    protected function validateAutosavedRelations(): void {
     }
 
-    protected function validationRulesToIgnoreForParentRelations() {
+    /**
+     * @return array<string>
+     */
+    protected function validationRulesToIgnoreForParentRelations(): array {
         return [];
     }
 }

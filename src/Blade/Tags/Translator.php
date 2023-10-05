@@ -4,23 +4,27 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
+use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
+use SilvertipSoftware\LaravelSupport\Eloquent\Model;
+
 class Translator {
 
-    protected $methodAndValue;
-    protected $model;
-    protected $objectName;
-    protected $scope;
+    protected Model|FluentModel|null $model;
+    protected string $objectName;
 
-    public function __construct($object, $objectName, $methodAndValue, $scope = null) {
+    public function __construct(
+        ?object $object,
+        string $objectName,
+        protected string $methodAndValue,
+        protected ?string $scope = null
+    ) {
         $this->objectName = preg_replace('/\[(.*)_attributes\]\[\d+\]/', '.$1', $objectName);
-        $this->methodAndValue = $methodAndValue;
-        $this->scope = $scope;
         $this->model = $object && method_exists($object, 'toModel')
             ? $object->toModel()
             : null;
     }
 
-    public function translate() {
+    public function translate(): ?string {
         $key = ($this->scope ? ($this->scope . '.') : '') . $this->objectName . '.' . $this->methodAndValue;
         $trans = trans($key);
 
@@ -31,7 +35,7 @@ class Translator {
         return $trans;
     }
 
-    private function i18nDefault() {
+    private function i18nDefault(): string {
         $trans = '';
 
         if ($this->model) {
@@ -46,7 +50,7 @@ class Translator {
         return $trans;
     }
 
-    private function humanAttributeName() {
+    private function humanAttributeName(): ?string {
         if ($this->model && method_exists($this->model, 'humanAttributeName')) {
             return $this->model->humanAttributeName($this->methodAndValue);
         }

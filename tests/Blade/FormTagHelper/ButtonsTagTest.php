@@ -126,7 +126,7 @@ class ButtonsTagTest extends TestCase {
     public function testButtonTagWithBlock() {
         $expected = '<button name="button" type="submit">Content</button>';
 
-        $this->assertDomEquals($expected, static::buttonTag(function () {
+        $this->assertDomEquals($expected, static::buttonTag(block: function () {
             return 'Content';
         }));
     }
@@ -141,7 +141,7 @@ class ButtonsTagTest extends TestCase {
             return static::contentTag('strong', 'Do not press!');
         };
 
-        $this->assertDomEquals($expected, static::buttonTag($opts, $fn));
+        $this->assertDomEquals($expected, static::buttonTag(null, $opts, $fn));
     }
 
     public function testButtonTagWithConfirm() {

@@ -6,25 +6,36 @@ namespace SilvertipSoftware\LaravelSupport\Blade;
 
 use Carbon\Carbon;
 use Closure;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Query\Builder;
+use Generator;
+use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
+use Stringable;
 
+/**
+ * @phpstan-type HtmlStringGenerator Generator<int,\stdClass,null,HtmlString>
+ * @phpstan-type OptionHash array<string,mixed>
+ */
 trait FormOptionsHelper {
     use TagHelper;
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
     public static function collectionCheckBoxes(
-        $object,
-        $method,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options = [],
-        $htmlOptions = [],
-        $block = null
-    ) {
+        ?string $object,
+        string $method,
+        array|Collection|QueryBuilder|null $collection,
+        string|int|Closure $valueMethod,
+        string|int|Closure $textMethod,
+        array $options = [],
+        array $htmlOptions = [],
+        Closure $block = null
+    ): HtmlString {
         $yield = $block != null;
         $generator = static::yieldingCollectionCheckBoxes(
             $object,
@@ -46,16 +57,21 @@ trait FormOptionsHelper {
         return $generator->getReturn();
     }
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
     public static function collectionRadioButtons(
-        $object,
-        $method,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options = [],
-        $htmlOptions = [],
-        $block = null
-    ) {
+        ?string $object,
+        string $method,
+        array|Collection|QueryBuilder|null $collection,
+        string|int|Closure $valueMethod,
+        string|int|Closure $textMethod,
+        array $options = [],
+        array $htmlOptions = [],
+        ?Closure $block = null
+    ): HtmlString {
         $yield = $block != null;
         $generator = static::yieldingCollectionRadioButtons(
             $object,
@@ -77,15 +93,20 @@ trait FormOptionsHelper {
         return $generator->getReturn();
     }
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
     public static function collectionSelect(
-        $object,
-        $method,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options = [],
-        $htmlOptions = []
-    ) {
+        ?string $object,
+        string $method,
+        array|Collection|QueryBuilder|null $collection,
+        string|int|Closure $valueMethod,
+        string|int|Closure $textMethod,
+        array $options = [],
+        array $htmlOptions = []
+    ): HtmlString {
         return (new Tags\CollectionSelect(
             $object,
             $method,
@@ -98,17 +119,22 @@ trait FormOptionsHelper {
         ))->render();
     }
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
     public static function groupedCollectionSelect(
-        $object,
-        $method,
-        $collection,
-        $groupMethod,
-        $groupLabelMethod,
-        $optionKeyMethod,
-        $optionValueMethod,
-        $options = [],
-        $htmlOptions = []
-    ) {
+        ?string $object,
+        string $method,
+        array|Collection|QueryBuilder|null $collection,
+        string|int|Closure $groupMethod,
+        string|int|Closure $groupLabelMethod,
+        string|int|Closure $optionKeyMethod,
+        string|int|Closure $optionValueMethod,
+        array $options = [],
+        array $htmlOptions = []
+    ): HtmlString {
         $obj = new Tags\GroupedCollectionSelect(
             $object,
             $method,
@@ -125,7 +151,15 @@ trait FormOptionsHelper {
         return $obj->render();
     }
 
-    public static function groupedOptionsForSelect($groupedOptions, $selectedKey = null, $options = []) {
+    /**
+     * @param array<mixed>|Collection $groupedOptions
+     * @param OptionHash $options
+     */
+    public static function groupedOptionsForSelect(
+        array|Collection $groupedOptions,
+        mixed $selectedKey = null,
+        array $options = []
+    ): HtmlString {
         $prompt = Arr::get($options, 'prompt');
         $divider = Arr::get($options, 'divider');
         $body = '';
@@ -156,9 +190,15 @@ trait FormOptionsHelper {
         return new HtmlString($body);
     }
 
-    public static function optionsForSelect($container, $selected = null) {
+    /**
+     * @param string|array<mixed>|Collection $container
+     */
+    public static function optionsForSelect(
+        string|array|Collection|null $container,
+        mixed $selected = null
+    ): HtmlString {
         if (is_string($container)) {
-            return $container;
+            return new HtmlString($container);
         }
 
         list($selected, $disabled) = array_map(function ($r) {
@@ -196,8 +236,16 @@ trait FormOptionsHelper {
         return new HtmlString(implode("\n", $pieces->all()));
     }
 
-    public static function optionsFromCollectionForSelect($collection, $valueMethod, $textMethod, $selected = null) {
-        if ($collection instanceof Builder || $collection instanceof EloquentBuilder) {
+    /**
+     * @param array<mixed>|Collection|QueryBuilder $collection
+     */
+    public static function optionsFromCollectionForSelect(
+        array|Collection|QueryBuilder $collection,
+        string|int|Closure $valueMethod,
+        string|int|Closure $textMethod,
+        mixed $selected = null
+    ): HtmlString {
+        if ($collection instanceof QueryBuilder) {
             $collection = $collection->get();
         }
 
@@ -218,14 +266,17 @@ trait FormOptionsHelper {
         return static::optionsForSelect($options, $selectDeselect);
     }
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder $collection
+     */
     public static function optionGroupsFromCollectionForSelect(
-        $collection,
-        $groupMethod,
-        $groupLabelMethod,
-        $optionKeyMethod,
-        $optionValueMethod,
-        $selectedKey = null
-    ) {
+        array|Collection|QueryBuilder $collection,
+        string|int|Closure $groupMethod,
+        string|int|Closure $groupLabelMethod,
+        string|int|Closure $optionKeyMethod,
+        string|int|Closure $optionValueMethod,
+        mixed $selectedKey = null
+    ): HtmlString {
         $optGroupFn = function (
             $group,
             $groupKey
@@ -255,7 +306,19 @@ trait FormOptionsHelper {
         return new HtmlString(implode('', $pieces->all()));
     }
 
-    public static function select($object, $method, $choices = null, $options = [], $htmlOptions = [], $block = null) {
+    /**
+     * @param string|Stringable|array<mixed>|Collection|null $choices
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
+    public static function select(
+        string $object,
+        string $method,
+        string|Stringable|array|Collection|null $choices = null,
+        array $options = [],
+        array $htmlOptions = [],
+        ?Closure $block = null
+    ): HtmlString {
         $yield = $block != null;
         $generator = static::yieldingSelect($object, $method, $choices, $options, $htmlOptions, $yield);
         if ($yield) {
@@ -267,7 +330,15 @@ trait FormOptionsHelper {
         return $generator->getReturn();
     }
 
-    public static function timeZoneOptionsForSelect($selected = null, $priorityZones = null, $model = null) {
+    /**
+     * @param string|string[]|null $priorityZones
+     * @param array<string>|Collection<int,string>|null $model
+     */
+    public static function timeZoneOptionsForSelect(
+        mixed $selected = null,
+        string|array|null $priorityZones = null,
+        array|Collection|null $model = null
+    ): HtmlString {
         $zoneOptions = '';
 
         $zones = collect($model ?: timezone_identifiers_list());
@@ -291,17 +362,28 @@ trait FormOptionsHelper {
         return new HtmlString($zoneOptions);
     }
 
-    public static function timeZoneSelect($object, $method, $priorityZones = null, $options = [], $htmlOptions = []) {
+    /**
+     * @param string|string[]|null $priorityZones
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
+    public static function timeZoneSelect(
+        string $object,
+        string $method,
+        string|array|null $priorityZones = null,
+        array $options = [],
+        array $htmlOptions = []
+    ): HtmlString {
         return (new Tags\TimeZoneSelect($object, $method, static::class, $priorityZones, $options, $htmlOptions))
             ->render();
     }
 
     public static function weekdayOptionsForSelect(
-        $selected = null,
-        $indexAsValue = false,
-        $dayFormat = 'day_names',
-        $beginningOfWeek = 1
-    ) {
+        mixed $selected = null,
+        bool $indexAsValue = false,
+        string $dayFormat = 'day_names',
+        int $beginningOfWeek = 1
+    ): HtmlString {
         $dayNames = trans('date.' . $dayFormat);
         if (is_string($dayNames)) {
             $dayNames = Carbon::getDays();
@@ -320,20 +402,35 @@ trait FormOptionsHelper {
         return static::optionsForSelect($dayNames, $selected);
     }
 
-    public static function weekdaySelect($object, $method, $options = [], $htmlOptions = []) {
+    /**
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
+    public static function weekdaySelect(
+        string $object,
+        string $method,
+        array $options = [],
+        array $htmlOptions = []
+    ): HtmlString {
         return (new Tags\WeekdaySelect($object, $method, static::class, $options, $htmlOptions))->render();
     }
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     * @return HtmlStringGenerator
+     */
     public static function yieldingCollectionCheckBoxes(
-        $object,
-        $method,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options = [],
-        $htmlOptions = [],
-        $yield = true
-    ) {
+        string $object,
+        string $method,
+        array|Collection|QueryBuilder|null $collection,
+        string|int|Closure $valueMethod,
+        string|int|Closure $textMethod,
+        array $options = [],
+        array $htmlOptions = [],
+        bool $yield = true
+    ): Generator {
         $tag = new Tags\CollectionCheckBoxes(
             $object,
             $method,
@@ -355,16 +452,22 @@ trait FormOptionsHelper {
         return $generator->getReturn();
     }
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     * @return HtmlStringGenerator
+     */
     public static function yieldingCollectionRadioButtons(
-        $object,
-        $method,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options = [],
-        $htmlOptions = [],
-        $yield = false
-    ) {
+        string $object,
+        string $method,
+        array|Collection|QueryBuilder|null $collection,
+        string|int|Closure $valueMethod,
+        string|int|Closure $textMethod,
+        array $options = [],
+        array $htmlOptions = [],
+        bool $yield = false
+    ): Generator {
         $tag = new Tags\CollectionRadioButtons(
             $object,
             $method,
@@ -386,14 +489,20 @@ trait FormOptionsHelper {
         return $generator->getReturn();
     }
 
+    /**
+     * @param string|Stringable|array<mixed>|Collection|null $choices
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     * @return HtmlStringGenerator
+     */
     public static function yieldingSelect(
-        $object,
-        $method,
-        $choices = null,
-        $options = [],
-        $htmlOptions = [],
-        $yield = false
-    ) {
+        string $object,
+        string $method,
+        string|Stringable|array|Collection|null $choices = null,
+        array $options = [],
+        array $htmlOptions = [],
+        bool $yield = false
+    ): Generator {
         if ($yield) {
             $obj = (object)[
                 'choices' => '',
@@ -405,7 +514,10 @@ trait FormOptionsHelper {
         return (new Tags\Select($object, $method, static::class, $choices, $options, $htmlOptions, null))->render();
     }
 
-    protected static function optionHtmlAttributes($element) {
+    /**
+     * @return OptionHash
+     */
+    protected static function optionHtmlAttributes(mixed $element): array {
         if (is_array($element)) {
             $hashes = array_filter($element, function ($e) {
                 return is_array($e) && Arr::isAssoc($e);
@@ -419,7 +531,10 @@ trait FormOptionsHelper {
         return [];
     }
 
-    protected static function optionTextAndValue($option, $key) {
+    /**
+     * @return array{0:mixed,1:mixed}
+     */
+    protected static function optionTextAndValue(mixed $option, mixed $key): array {
         if (is_array($option)) {
             $option = array_filter($option, function ($e) {
                 return !is_array($e);
@@ -435,11 +550,14 @@ trait FormOptionsHelper {
         return [$option, $option];
     }
 
-    protected static function isOptionValueSelected($value, $selected) {
+    protected static function isOptionValueSelected(mixed $value, mixed $selected): bool {
         return in_array($value, (array)$selected);
     }
 
-    protected static function extractSelectedAndDisabled($selected) {
+    /**
+     * @return array{0:mixed,1:mixed}
+     */
+    protected static function extractSelectedAndDisabled(mixed $selected): array {
         if (is_callable($selected) || is_string($selected)) {
             return [$selected, null];
         } else {
@@ -457,7 +575,14 @@ trait FormOptionsHelper {
         }
     }
 
-    protected static function extractValuesFromCollection($collection, $valueMethod, $selected) {
+    /**
+     * @param array<mixed>|Collection $collection
+     */
+    protected static function extractValuesFromCollection(
+        array|Collection $collection,
+        string|int|Closure $valueMethod,
+        mixed $selected
+    ): mixed {
         if (is_callable($selected)) {
             return $collection->map(function ($element) use ($selected, $valueMethod) {
                 if ($selected($element)) {
@@ -469,13 +594,17 @@ trait FormOptionsHelper {
         return $selected;
     }
 
-    protected static function valueForCollection($item, $value, $key = null) {
+    protected static function valueForCollection(
+        mixed $item,
+        string|int|Closure $value,
+        string|int $key = null
+    ): mixed {
         return ($value instanceof Closure)
             ? $value($item, $key)
             : (is_array($item) && is_numeric($value) ? $item[$value] : $item->{$value});
     }
 
-    protected static function promptText($prompt) {
+    protected static function promptText(mixed $prompt): string {
         return is_string($prompt)
             ? $prompt
             : StrUtils::translate(['helpers.select.prompt'], 'Please select');

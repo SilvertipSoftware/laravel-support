@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class TextArea extends Base {
     use Placeholderable;
 
-    public function render() {
+    public function render(): HtmlString {
         $options = $this->options;
         $this->addDefaultNameAndId($options);
 

@@ -4,21 +4,34 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
+use Closure;
+use Generator;
+use Stringable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
+/**
+ * @phpstan-type OptionHash array<string,mixed>
+ */
 trait FormTagHelper {
     use TagHelper,
         UrlHelper;
 
-    public static $automaticallyDisableSubmitTag = true;
-    public static $embedCsrfInRemoteForms = true;
-    public static $protectAgainstForgery = true;
-    public static $defaultEnforceUtf8 = true;
+    public static bool $automaticallyDisableSubmitTag = true;
+    public static bool $embedCsrfInRemoteForms = true;
+    public static bool $protectAgainstForgery = true;
+    public static bool $defaultEnforceUtf8 = true;
 
-    public static function buttonTag($content = null, $options = [], $block = null) {
-        list($content, $options, $block) = Utils::determineTagArgs($content, $options, $block);
+    /**
+     * @param OptionHash $options
+     */
+    public static function buttonTag(
+        string|Stringable|null $content = null,
+        array $options = [],
+        Closure $block = null
+    ): HtmlString {
+//        list($content, $options, $block) = Utils::determineTagArgs($content, $options, $block);
 
         $yield = $block != null;
         $generator = static::yieldingButtonTag($content, $options, $yield);
@@ -31,7 +44,15 @@ trait FormTagHelper {
         return $generator->getReturn();
     }
 
-    public static function checkBoxTag($name, $value = "1", $checked = false, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function checkBoxTag(
+        string $name,
+        mixed $value = "1",
+        bool $checked = false,
+        array $options = []
+    ): HtmlString {
         $opts = [
             'type' => 'checkbox',
             'name' => $name,
@@ -47,35 +68,62 @@ trait FormTagHelper {
         return static::tag('input', $htmlOptions);
     }
 
-    public static function colorFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function colorFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'color']));
     }
 
-    public static function dateFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function dateFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'date']));
     }
 
-    public static function datetimeFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function datetimeFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'datetime-local']));
     }
 
-    public static function emailFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function emailFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'email']));
     }
 
-    public static function fileFieldTag($name, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function fileFieldTag(string $name, array $options = []): HtmlString {
         $opts = array_merge($options, ['type' => 'file']);
 
         return static::textFieldTag($name, null, static::convertDirectUploadOptionToUrl($opts));
     }
 
-    public static function hiddenFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function hiddenFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         $opts = array_merge($options, ['type' => 'hidden', 'autocomplete' => 'off']);
 
         return static::textFieldTag($name, $value, $opts);
     }
 
-    public static function fieldId($objectOrName, $methodName, array $suffixes = [], $index = null, $namespace = null) {
+    /**
+     * @param string[] $suffixes
+     */
+    public static function fieldId(
+        object|string $objectOrName,
+        string $methodName,
+        array $suffixes = [],
+        string|int|null $index = null,
+        ?string $namespace = null
+    ): string {
         if (is_object($objectOrName) && method_exists($objectOrName, 'modelName')) {
             $objectOrName = $objectOrName->modelName()->singular;
         }
@@ -98,13 +146,16 @@ trait FormTagHelper {
         }));
     }
 
+    /**
+     * @param string|string[] $otherNames
+     */
     public static function fieldName(
-        $objectOrName,
-        $methodName,
-        array $otherNames = [],
-        $multiple = false,
-        $index = null
-    ) {
+        object|string|null $objectOrName,
+        string $methodName,
+        string|array $otherNames = [],
+        bool $multiple = false,
+        string|int|null $index = null
+    ): string {
         $names = implode(
             '',
             array_map(function ($name) {
@@ -121,27 +172,36 @@ trait FormTagHelper {
         }
     }
 
-    // public static function formTag($urlForOptions = [], $options = []) {
-    //     $htmlOptions = static::htmlOptionsForForm($urlForOptions, $options);
-
-    //     return static::formTagHtml($htmlOptions);
-    // }
-
-    public static function formTagHtml($options) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function formTagHtml(array $options): HtmlString {
         $extraTags = static::extraTagsForForm($options);
 
         return new HtmlString(static::tag('form', $options, true) . $extraTags);
     }
 
-    public static function formTagWithBody($options, $content = null) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function formTagWithBody(array $options, string|Stringable|null $content = null): HtmlString {
         return new HtmlString(static::formTagHtml($options) . $content . '</form>');
     }
 
-    public static function labelTag($name = null, $contentOrOptions = null, $options = [], $block = null) {
+    /**
+     * @param string|Stringable|OptionHash|Closure $contentOrOptions
+     * @param OptionHash $options
+     */
+    public static function labelTag(
+        string $name = null,
+        string|Stringable|array|Closure $contentOrOptions = null,
+        array|Closure $options = [],
+        ?Closure $block = null
+    ): HtmlString {
         list($content, $options, $block) = Utils::determineTagArgs($contentOrOptions, $options, $block);
 
         $yield = $block != null;
-        $generator = static::yieldingLabelTag($name, $content, $options, $yield);
+        $generator = static::yieldingLabelTag($name, $content, $options ?? [], $yield);
         if ($yield) {
             foreach ($generator as $obj) {
                 $obj->content = $block();
@@ -151,11 +211,17 @@ trait FormTagHelper {
         return $generator->getReturn();
     }
 
-    public static function monthFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function monthFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'month']));
     }
 
-    public static function numberFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function numberFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         $type = Arr::pull($options, 'type', 'number');
         $range = Arr::pull($options, 'range', null);
         if ($range && is_array($range) && count($range) == 2) {
@@ -165,11 +231,26 @@ trait FormTagHelper {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => $type]));
     }
 
-    public static function passwordFieldTag($name = 'password', $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function passwordFieldTag(
+        string $name = 'password',
+        mixed $value = null,
+        array $options = []
+    ): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'password']));
     }
 
-    public static function radioButtonTag($name, $value, $checked = false, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function radioButtonTag(
+        string $name,
+        mixed $value,
+        mixed $checked = false,
+        array $options = []
+    ): HtmlString {
         $opts = [
             'type' => 'radio',
             'name' => $name,
@@ -185,15 +266,24 @@ trait FormTagHelper {
         return static::tag('input', $htmlOptions);
     }
 
-    public static function rangeFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function rangeFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::numberFieldTag($name, $value, array_merge($options, ['type' => 'range']));
     }
 
-    public static function searchFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function searchFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'search']));
     }
 
-    public static function submitTag($value = "Save changes", $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function submitTag(string $value = "Save changes", array $options = []): HtmlString {
         $opts = [
             'type' => 'submit',
             'name' => 'commit',
@@ -205,7 +295,14 @@ trait FormTagHelper {
         return static::tag('input', $htmlOptions);
     }
 
-    public static function textAreaTag($name, $content = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function textAreaTag(
+        string $name,
+        string|Stringable|null $content = null,
+        array $options = []
+    ): HtmlString {
         $size = Arr::pull($options, 'size');
         if (is_string($size)) {
             list($options['cols'], $options['rows']) = explode('x', $size);
@@ -222,7 +319,10 @@ trait FormTagHelper {
         return static::contentTag('textarea', new HtmlString($content), array_merge($opts, $options));
     }
 
-    public static function textFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function textFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         $opts = [
             'type' => 'text',
             'name' => $name,
@@ -233,19 +333,36 @@ trait FormTagHelper {
         return static::tag('input', array_merge($opts, $options));
     }
 
-    public static function timeFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function timeFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'time']));
     }
 
-    public static function urlFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function urlFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'url']));
     }
 
-    public static function weekFieldTag($name, $value = null, $options = []) {
+    /**
+     * @param OptionHash $options
+     */
+    public static function weekFieldTag(string $name, mixed $value = null, array $options = []): HtmlString {
         return static::textFieldTag($name, $value, array_merge($options, ['type' => 'week']));
     }
 
-    public static function yieldingButtonTag($content = null, $options = [], $yield = true) {
+    /**
+     * @param OptionHash $options
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
+    public static function yieldingButtonTag(
+        string|Stringable|null $content = null,
+        array $options = [],
+        bool $yield = true
+    ): Generator {
         list($content, $options) = Utils::determineTagArgs($content, $options);
         $options = $options ?? [];
 
@@ -260,7 +377,17 @@ trait FormTagHelper {
         return $generator->getReturn();
     }
 
-    public static function yieldingLabelTag($name = null, $contentOrOptions = null, $options = [], $yield = true) {
+    /**
+     * @param string|Stringable|OptionHash|null $contentOrOptions
+     * @param OptionHash $options
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
+    public static function yieldingLabelTag(
+        ?string $name = null,
+        string|Stringable|array|null $contentOrOptions = null,
+        array $options = [],
+        bool $yield = true
+    ): Generator {
         list($content, $options) = Utils::determineTagArgs($contentOrOptions, $options);
         $options = $options ?? [];
 
@@ -280,7 +407,11 @@ trait FormTagHelper {
         return $generator->getReturn();
     }
 
-    protected static function convertDirectUploadOptionToUrl($options) {
+    /**
+     * @param OptionHash $options
+     * @return OptionHash
+     */
+    protected static function convertDirectUploadOptionToUrl(array $options): array {
         if (Arr::pull($options, 'direct_upload') && method_exists(static::class, 'directUploadsUrl')) {
             $options['data-direct-upload-url'] = static::directUploadsUrl();
         }
@@ -288,15 +419,18 @@ trait FormTagHelper {
         return $options;
     }
 
-    protected static function deleteSuffix($str, $suffix) {
+    protected static function deleteSuffix(string $str, string $suffix): string {
         return preg_replace('/' . $suffix . '$/', '', $str);
     }
 
-    protected static function directUploadsUrl() {
+    protected static function directUploadsUrl(): ?string {
         return null;
     }
 
-    protected static function extraTagsForForm(&$options) {
+    /**
+     * @param OptionHash $options
+     */
+    protected static function extraTagsForForm(&$options): HtmlString {
         $csrf_token = Arr::pull($options, 'csrf_token');
         $method = strtolower(Arr::pull($options, 'method', 'post'));
 
@@ -325,10 +459,15 @@ trait FormTagHelper {
             $tags = static::utf8EnforcerTag() . $tags;
         }
 
-        return $tags;
+        return new HtmlString($tags);
     }
 
-    protected static function htmlOptionsForForm($urlForOptions, $options) {
+    /**
+     * @param string|bool|OptionHash $urlForOptions
+     * @param OptionHash $options
+     * @return OptionHash
+     */
+    protected static function htmlOptionsForForm(string|bool|object|array $urlForOptions, array $options): array {
         if (Arr::pull($options, 'multipart')) {
             $options['enctype'] = "multipart/form-data";
         }
@@ -354,11 +493,11 @@ trait FormTagHelper {
         return $options;
     }
 
-    protected static function sanitizeToId($name) {
+    protected static function sanitizeToId(string|int|float|Stringable|null $name): string {
         return preg_replace('/[^-a-zA-Z0-9:\.]/', '_', str_replace(']', '', '' . $name));
     }
 
-    protected static function methodTag($method) {
+    protected static function methodTag(?string $method): HtmlString {
         return static::tag('input', [
             'type' => 'hidden',
             'name' => '_method',
@@ -367,9 +506,12 @@ trait FormTagHelper {
         ], false, false);
     }
 
-    protected static function tokenTag($token, $options) {
+    /**
+     * @param OptionHash $options
+     */
+    protected static function tokenTag(?string $token, array $options): HtmlString {
         if (!static::$protectAgainstForgery) {
-            return '';
+            return new HtmlString();
         }
 
         return static::tag('input', [
@@ -380,11 +522,14 @@ trait FormTagHelper {
         ], false, false);
     }
 
-    protected static function utf8EnforcerTag() {
+    protected static function utf8EnforcerTag(): HtmlString {
         return new HtmlString('<input type="hidden" name="utf8" value="&#x2713;" autocomplete="off" />');
     }
 
-    protected static function setDefaultDisableWith($value, &$options) {
+    /**
+     * @param OptionHash $options
+     */
+    protected static function setDefaultDisableWith(mixed $value, array &$options): void {
         $data = Arr::get($options, 'data', []);
 
         if (Arr::get($options, 'data-disable-with') === false || Arr::get($data, 'disable-with') === false) {

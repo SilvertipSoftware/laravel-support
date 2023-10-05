@@ -4,40 +4,35 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
+use Closure;
+use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 
 class GroupedCollectionSelect extends Base {
 
-    protected $collection;
-    protected $groupMethod;
-    protected $groupLabelMethod;
-    protected $htmlOptions;
-    protected $optionKeyMethod;
-    protected $optionValueMethod;
-
+    /**
+     * @param array<mixed>|Collection|QueryBuilder $collection
+     * @param array<string,mixed> $options
+     * @param array<string,mixed> $htmlOptions
+     */
     public function __construct(
-        $objectName,
-        $methodName,
-        $templateObject,
-        $collection,
-        $groupMethod,
-        $groupLabelMethod,
-        $optionKeyMethod,
-        $optionValueMethod,
+        string $objectName,
+        string $methodName,
+        string $templateObject,
+        protected array|Collection|QueryBuilder $collection,
+        protected string|int|Closure $groupMethod,
+        protected string|int|Closure $groupLabelMethod,
+        protected string|int|Closure $optionKeyMethod,
+        protected string|int|Closure $optionValueMethod,
         $options,
-        $htmlOptions
+        protected $htmlOptions
     ) {
-        $this->collection = $collection;
-        $this->groupMethod = $groupMethod;
-        $this->groupLabelMethod = $groupLabelMethod;
-        $this->optionKeyMethod = $optionKeyMethod;
-        $this->optionValueMethod = $optionValueMethod;
-        $this->htmlOptions = $htmlOptions;
-
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render() {
+    public function render(): HtmlString {
         $optionTagsOptions = [
             'selected' => Arr::get($this->options, 'selected', $this->value()),
             'disabled' => Arr::get($this->options, 'disabled')

@@ -8,7 +8,10 @@ use Illuminate\Support\Arr;
 
 trait Checkable {
 
-    public function isInputChecked(&$options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    public function isInputChecked(array &$options): bool {
         if (Arr::has($options, 'checked')) {
             $checked = Arr::pull($options, 'checked');
             return $checked === true || $checked === 'checked';

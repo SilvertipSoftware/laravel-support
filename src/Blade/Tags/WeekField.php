@@ -6,7 +6,7 @@ namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 class WeekField extends DatetimeField {
 
-    protected function dateFormat() {
+    protected function dateFormat(): string {
         return 'o-\WW';
     }
 }

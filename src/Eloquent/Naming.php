@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
+use Closure;
 use SilvertipSoftware\LaravelSupport\Eloquent\Naming\Name;
 
 trait Naming {
 
-    protected static $modelNames = [];
-    protected static $modelRelativeNamespace = null;
+    /** @var array<string,Name> */
+    protected static array $modelNames = [];
+    protected static string|Closure|null $modelRelativeNamespace = null;
 
-    public static function modelName() {
+    public static function modelName(): Name {
         if (!isset(static::$modelNames[static::class])) {
             static::$modelNames[static::class] = new Name(
                 static::class,
@@ -22,7 +24,7 @@ trait Naming {
         return static::$modelNames[static::class];
     }
 
-    public function getModelNameAttribute() {
+    public function getModelNameAttribute(): Name {
         return static::modelName();
     }
 }

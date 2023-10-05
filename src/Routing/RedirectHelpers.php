@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\URL;
 
 class RedirectHelpers {
 
-    public static function register() {
+    public static function register(): void {
         Redirect::macro('url', function (...$models) {
             // @phpstan-ignore-next-line
             return $this->to(URL::url(...$models));

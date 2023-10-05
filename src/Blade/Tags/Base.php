@@ -7,6 +7,7 @@ namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use RuntimeException;
+use Stringable;
 use SilvertipSoftware\LaravelSupport\Blade\FormOptionsHelper;
 use SilvertipSoftware\LaravelSupport\Blade\FormTagHelper;
 use SilvertipSoftware\LaravelSupport\Blade\TagHelper;
@@ -16,21 +17,25 @@ class Base {
         FormTagHelper,
         FormOptionsHelper;
 
-    public $object;
+    public ?object $object;
 
-    protected $allowMethodNamesOutsideObject;
-    protected $autoIndex = null;
-    protected $generateIndexedNames = false;
-    protected $methodName;
-    protected $objectName;
-    protected $options;
-    protected $sanitizedMethodName;
-    protected $skipDefaultIds;
-    protected $templateObject;
+    protected int|string|null $autoIndex = null;
+    protected bool $generateIndexedNames = false;
+    protected string $objectName;
+    /** @var array<string,mixed> */
+    protected array$options;
+    protected ?string $sanitizedMethodName = null;
+    protected bool $skipDefaultIds;
 
-    public function __construct($objectName, $methodName, $templateObject, $options = []) {
-        $this->methodName = $methodName;
-        $this->templateObject = $templateObject;
+    /**
+     * @param array<string,mixed> $options
+     */
+    public function __construct(
+        ?string $objectName,
+        protected string $methodName,
+        protected string $templateObject,
+        array $options = []
+    ) {
         $count = 0;
         $indexable = null;
 
@@ -45,8 +50,8 @@ class Base {
         }
 
         $this->object = $this->retrieveObject(Arr::pull($options, 'object'));
-        $this->skipDefaultIds = Arr::pull($options, 'skip_default_ids');
-        $this->allowMethodNamesOutsideObject = Arr::pull($options, 'allow_method_names_outside_object');
+        Arr::pull($options, 'allow_method_names_outside_object');
+        $this->skipDefaultIds = Arr::pull($options, 'skip_default_ids', false);
         $this->options = $options;
 
         if ($indexable) {
@@ -55,7 +60,10 @@ class Base {
         }
     }
 
-    protected function addDefaultNameAndIdForValue($tagValue, &$options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function addDefaultNameAndIdForValue(string|bool|int|float|null $tagValue, array &$options): void {
         if ($tagValue === null) {
             $this->addDefaultNameAndId($options);
         } else {
@@ -68,7 +76,10 @@ class Base {
         }
     }
 
-    protected function addDefaultNameAndId(&$options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function addDefaultNameAndId(array &$options): void {
         $index = $this->nameAndIdIndex($options);
         $options['name'] = $this->getNameFromOptions($index, $options);
 
@@ -82,7 +93,10 @@ class Base {
         }
     }
 
-    protected function addOptions($optionTags, $options, $value = null) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function addOptions(string|HtmlString $optionTags, array $options, mixed $value = null): HtmlString {
         $blank = Arr::get($options, 'include_blank');
         $content = null;
 
@@ -114,21 +128,29 @@ class Base {
         return new HtmlString($optionTags);
     }
 
-    protected function nameAndIdIndex(&$options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function nameAndIdIndex(&$options): int|string|null {
         if (array_key_exists('index', $options)) {
             return Arr::pull($options, 'index') ?? '';
         } elseif ($this->generateIndexedNames) {
             return $this->autoIndex ?? '';
         }
+
+        return null;
     }
 
-    protected function isPlaceholderRequired($htmlOptions) {
+    /**
+     * @param array<string,mixed> $htmlOptions
+     */
+    protected function isPlaceholderRequired($htmlOptions): bool {
         return Arr::get($htmlOptions, 'required')
             && !Arr::get($htmlOptions, 'multiple')
             && Arr::get($htmlOptions, 'size', 1) == 1;
     }
 
-    protected function retrieveAutoindex($str) {
+    protected function retrieveAutoindex(string $str): int|string|null {
         $object = $this->object;
         if ($object && method_exists($object, 'toParam')) {
             return $object->toParam();
@@ -137,7 +159,7 @@ class Base {
         }
     }
 
-    protected function retrieveObject($object) {
+    protected function retrieveObject(?object $object): ?object {
         if ($object) {
             return $object;
         }
@@ -154,7 +176,7 @@ class Base {
         return $this->sanitizedMethodName;
     }
 
-    protected function sanitizedValue($value): string {
+    protected function sanitizedValue(string|bool|int|float|Stringable|null $value): string {
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
         }
@@ -165,7 +187,11 @@ class Base {
         return strtolower($temp);
     }
 
-    protected function selectContentTag($optionTags, $options, $htmlOptions) {
+    /**
+     * @param array<string,mixed> $options
+     * @param array<string,mixed> $htmlOptions
+     */
+    protected function selectContentTag(string|HtmlString $optionTags, array $options, array $htmlOptions): HtmlString {
         $this->addDefaultNameAndId($htmlOptions);
 
         if ($this->isPlaceholderRequired($htmlOptions)) {
@@ -197,7 +223,7 @@ class Base {
         return new HtmlString($hiddenTag->toHtml() . $selTag->toHtml());
     }
 
-    protected function tagId($index = false, $namespace = null) {
+    protected function tagId(string|int|bool|null $index = false, ?string $namespace = null): string {
         return ($this->templateObject)::fieldId(
             $this->objectName,
             $this->methodName,
@@ -207,7 +233,7 @@ class Base {
         );
     }
 
-    protected function tagName($multiple = false, $index = null) {
+    protected function tagName(bool $multiple = false, string|int|null $index = null): string {
         return ($this->templateObject)::fieldName(
             $this->objectName,
             $this->sanitizedMethodName(),
@@ -217,19 +243,26 @@ class Base {
         );
     }
 
-    protected function value() {
+    protected function value(): mixed {
         if ($this->object) {
             return $this->object->{$this->methodName};
         }
+
+        return null;
     }
 
-    protected function valueBeforeTypeCast() {
+    protected function valueBeforeTypeCast(): mixed {
         if ($this->object) {
             return $this->value();
         }
+
+        return null;
     }
 
-    private function getNameFromOptions($index, $options) {
-        return Arr::get($options, 'name', $this->tagName(Arr::get($options, 'multiple'), $index));
+    /**
+     * @param array<string,mixed> $options
+     */
+    private function getNameFromOptions(string|int|null $index, array $options): ?string {
+        return Arr::get($options, 'name', $this->tagName(Arr::get($options, 'multiple', false), $index));
     }
 }

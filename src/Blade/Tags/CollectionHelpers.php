@@ -5,33 +5,38 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Closure;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Query\Builder;
+use Generator;
+use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use SilvertipSoftware\LaravelSupport\Blade\Tags\CollectionHelpers\Builder as CollectionBuilder;
+use Stringable;
 
 trait CollectionHelpers {
 
+    /**
+     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<string,mixed> $options
+     * @param array<string,mixed> $htmlOptions
+     */
     public function __construct(
-        $objectName,
-        $methodName,
-        $templateObject,
-        $collection,
-        $valueMethod,
-        $textMethod,
-        $options,
-        $htmlOptions
+        ?string $objectName,
+        string $methodName,
+        string $templateObject,
+        protected array|Collection|QueryBuilder|null $collection,
+        protected string|int|Closure $valueMethod,
+        protected string|int|Closure $textMethod,
+        array $options,
+        protected array $htmlOptions
     ) {
-        $this->collection = $collection;
-        $this->valueMethod = $valueMethod;
-        $this->textMethod = $textMethod;
-        $this->htmlOptions = $htmlOptions;
-
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    protected function defaultHtmlOptionsForCollection($item, $value) {
+    /**
+     * @return array<string,mixed>
+     */
+    protected function defaultHtmlOptionsForCollection(mixed $item, mixed $value): array {
         $htmlOptions = $this->htmlOptions;
 
         foreach (['checked', 'selected', 'disabled', 'readonly'] as $option) {
@@ -40,8 +45,10 @@ trait CollectionHelpers {
                 continue;
             }
 
+            // @phpstan-ignore-next-line
             $accept = $currentValue instanceof Closure
                 ? $currentValue($item)
+                // @phpstan-ignore-next-line
                 : collect($currentValue)->contains($value);
 
             if ($accept) {
@@ -56,16 +63,28 @@ trait CollectionHelpers {
         return $htmlOptions;
     }
 
-    protected function hiddenField() {
+    protected function hiddenField(): HtmlString {
         $hiddenName = Arr::get($this->htmlOptions, 'name') ?: $this->hiddenFieldName();
         return ($this->templateObject)::hiddenFieldTag($hiddenName, '', ['id' => null]);
     }
 
-    protected function hiddenFieldName() {
+    protected function hiddenFieldName(): ?string {
         return $this->tagName(false, Arr::get($this->options, 'index'));
     }
 
-    protected function instantiateBuilder($builderClass, $item, $value, $text, $htmlOptions) {
+    /**
+     * @template T of CollectionBuilder
+     * @param class-string<T> $builderClass
+     * @param array<string,mixed> $htmlOptions
+     * @return T
+     */
+    protected function instantiateBuilder(
+        string $builderClass,
+        mixed $item,
+        mixed $value,
+        mixed $text,
+        array $htmlOptions
+    ) {
         return new $builderClass(
             $this->templateObject,
             $this->objectName,
@@ -78,11 +97,14 @@ trait CollectionHelpers {
         );
     }
 
-    protected function yieldingRenderCollection() {
+    /**
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
+    protected function yieldingRenderCollection(): Generator {
         $pieces = [];
         $collection = $this->collection;
 
-        if ($collection instanceof Builder || $collection instanceof EloquentBuilder) {
+        if ($collection instanceof QueryBuilder) {
             $collection = $collection->get();
         }
 
@@ -106,7 +128,11 @@ trait CollectionHelpers {
         return new HtmlString(implode('', $pieces));
     }
 
-    protected function yieldingRenderCollectionFor($builderClass, $yield) {
+    /**
+     * @param class-string<CollectionBuilder> $builderClass
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
+    protected function yieldingRenderCollectionFor(string $builderClass, bool $yield): Generator {
         $options = $this->options;
 
         $generator = $this->yieldingRenderCollection();
@@ -127,6 +153,7 @@ trait CollectionHelpers {
                 yield $obj2;
                 $obj->content = $obj2->content;
             } else {
+                // @phpstan-ignore-next-line
                 $obj->content = $this->renderComponent($builder);
             }
         }
@@ -139,7 +166,7 @@ trait CollectionHelpers {
         return $renderedCollection;
     }
 
-    protected function sanitizeAttributeName($value) {
+    protected function sanitizeAttributeName(string|bool|int|float|Stringable|null $value): string {
         return $this->sanitizedMethodName() . '_' . $this->sanitizedValue($value);
     }
 }

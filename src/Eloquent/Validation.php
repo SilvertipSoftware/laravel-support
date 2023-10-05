@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
 use Illuminate\Contracts\Validation\Factory;
@@ -13,19 +15,28 @@ use SilvertipSoftware\LaravelSupport\Eloquent\Validation\ModelValidator;
 
 trait Validation {
 
-    public $errors;
+    public ?MessageBag $errors;
 
-    protected $genericInvalidMessageKey = 'validation.invalid';
+    protected string $genericInvalidMessageKey = 'validation.invalid';
 
-    protected $validationRules = [];
+    /** @var array<string,mixed> */
+    protected array $validationRules = [];
 
-    public function addValidationRules($attr, $rules) {
+    /**
+     * @param string|array<string, mixed> $rules
+     */
+    public function addValidationRules(string $attr, string|array $rules): static {
         $existingRules = Arr::get($this->validationRules, $attr, []);
 
         $this->validationRules[$attr] = array_unique(array_merge($existingRules, (array)$rules));
+
+        return $this;
     }
 
-    public function isValid($rules = null) {
+    /**
+     * @param array<string, mixed> $rules
+     */
+    public function isValid(array $rules = null): bool {
         try {
             $this->validate($rules);
         } catch (ValidationException $vex) {
@@ -35,17 +46,22 @@ trait Validation {
         return $this->errors->isEmpty();
     }
 
-    public function hasError($attr) {
+    public function hasError(string $attr): bool {
         return $this->errors->has($attr);
     }
 
-    public function validate($rules = null, $ignore_rules = []) {
+    /**
+     * @param array<string, mixed> $rules
+     * @param array<string, mixed> $ignoreRules
+     * @return array<string, mixed>
+     */
+    public function validate(array $rules = null, array $ignoreRules = []): array {
         $this->errors = new MessageBag();
 
         $this->fireModelEvent('validating');
         $rules = $rules ?: $this->getValidationRules();
-        $ignore_rules = array_merge($ignore_rules, $this->validationRulesToIgnoreForParentRelations());
-        $rules = Arr::except($rules, $ignore_rules);
+        $ignoreRules = array_merge($ignoreRules, $this->validationRulesToIgnoreForParentRelations());
+        $rules = Arr::except($rules, $ignoreRules);
 
         $ret = $this->validateSelf($rules);
         $this->validateAutosavedRelations();
@@ -59,27 +75,28 @@ trait Validation {
         return $ret;
     }
 
-    protected function initializeValidation() {
+    protected function initializeValidation(): void {
         $this->errors = new MessageBag();
 
         $this->addObservableEvents(['validating', 'validated']);
     }
 
-    protected function mergeErrors($bag, $prefix = null) {
+    protected function mergeErrors(?MessageBag $bag, string $prefix = null): void {
         if ($bag == null || $bag->isEmpty()) {
             return;
         }
 
         $prefixedMessages = [];
-        foreach ((is_array($bag) ? $bag : $bag->getMessages()) as $key => $value) {
+        foreach ($bag->getMessages() as $key => $value) {
             $prefixedMessages[$prefix ? ($prefix.'.'.$key) : $key] = $value;
         }
         $this->errors->merge($prefixedMessages);
-
-        return $this;
     }
 
-    protected function getValidationRules() {
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getValidationRules(): array {
         $rules = $this->validationRules ?: [];
 
         foreach ($rules as $attr => &$ruleSet) {
@@ -99,7 +116,11 @@ trait Validation {
     protected function validateAutosavedRelations() {
     }
 
-    protected function validateSelf($rules) {
+    /**
+     * @param array<string, mixed> $rules
+     * @return array<string, mixed>
+     */
+    protected function validateSelf(array $rules): array {
         try {
             $factory = app(Factory::class);
             $factory->resolver(function ($translator, $data, $rules, $messages, $customAttributes) {
@@ -117,6 +138,8 @@ trait Validation {
         } catch (ValidationException $vex) {
             $this->mergeErrors($vex->validator->errors());
         }
+
+        return [];
     }
 
     // overridden by AutosaveRelations
@@ -124,7 +147,7 @@ trait Validation {
         return [];
     }
 
-    private function buildMethodCallingRule($paramStr) {
+    private function buildMethodCallingRule(string $paramStr): MethodCallingRule {
         $params = explode(',', $paramStr);
         $tag = array_shift($params);
 

@@ -8,6 +8,9 @@ use Illuminate\Support\HtmlString;
 
 class RadioButtonBuilder extends Builder {
 
+    /**
+     * @param array<string,mixed> $extraHtmlOptions
+     */
     public function radioButton(array $extraHtmlOptions = []): HtmlString {
         $htmlOptions = array_merge($extraHtmlOptions, $this->inputHtmlOptions);
         $htmlOptions['skip_default_ids'] = false;

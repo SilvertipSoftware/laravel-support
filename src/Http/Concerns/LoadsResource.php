@@ -2,31 +2,34 @@
 
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 trait LoadsResource {
 
-    protected $parentName = null;
-    protected $parentModel = null;
+    /** @var array<string,array<string>> */
+    protected array|bool $loadResource = [];
+    protected ?string $parentName = null;
+    protected ?Model $parentModel = null;
 
-    public function initializeLoadsResource() {
-        if (isset($this->loadResource) && $this->loadResource == false) {
-            return null;
+    public function initializeLoadsResource(): void {
+        if ($this->loadResource === false) {
+            return;
         }
 
         $middleware = $this->before(function () {
             $this->loadResourceForRoute();
         });
 
-        $modifiers = Arr::only(isset($this->loadResource) ? $this->loadResource : [], ['only', 'except']);
+        $modifiers = Arr::only($this->loadResource, ['only', 'except']);
         foreach ($modifiers as $key => $actions) {
             $middleware->{$key}($actions);
         }
     }
 
-    protected function createCollectionQuery($name, $class, $hasParent) {
+    protected function createCollectionQuery(string $name, string $class, bool $hasParent): void {
         $query = null;
 
         if ($hasParent) {
@@ -42,7 +45,7 @@ trait LoadsResource {
         $this->{$name . '_query'} = $query;
     }
 
-    protected function loadResourceForRoute($modelName = null, $single = null) {
+    protected function loadResourceForRoute(?string $modelName = null, bool $single = false): void {
         $currentRoute = Route::getCurrentRoute();
         $action = $currentRoute->getActionMethod();
         $modelName = $modelName ?: $this->getSubjectResourceTag();
@@ -80,18 +83,18 @@ trait LoadsResource {
         }
     }
 
-    protected function loadResource($name, $class = null) {
+    protected function loadResource(string $name, ?string $class = null): Model {
         $class = $class ?: $this->getSubjectResourceClass();
         $this->{$name} = $class::findOrFail(request($this->routeParameterNameFor($name)));
 
         return $this->{$name};
     }
 
-    protected function nameFromRouteParameter($param) {
+    protected function nameFromRouteParameter(string $param): string {
         return Str::replaceLast('_id', '', $param);
     }
 
-    protected function routeParameterNameFor($name) {
+    protected function routeParameterNameFor(string $name): string {
         return $name . '_id';
     }
 }

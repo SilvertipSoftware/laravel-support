@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 trait ConditionalGet {
 
-    public function freshWhen($object, $lastModified = null) {
+    public function freshWhen(mixed $object, ?Carbon $lastModified = null): void {
         $request = request();
 
         // @phpstan-ignore-next-line
@@ -19,14 +19,14 @@ trait ConditionalGet {
         ]);
     }
 
-    public function isStale($object, $lastModified = null) {
+    public function isStale(mixed $object, ?Carbon $lastModified = null): bool {
         $this->freshWhen($object, $lastModified);
 
         // @phpstan-ignore-next-line
         return !request()->isFresh();
     }
 
-    protected function computeLastModifiedFrom($object) {
+    protected function computeLastModifiedFrom(mixed $object): ?Carbon {
         $modified = null;
 
         if (is_object($object)) {

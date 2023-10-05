@@ -19,27 +19,33 @@ class Model extends EloquentModel {
 
     protected $guarded = [];
 
-    public function __construct($attrsOrParams = []) {
-        $attrs = $attrsOrParams instanceof Arrayable
-            ? $attrsOrParams->toArray()
-            : $attrsOrParams;
+    /**
+     * @param array<string,mixed>|Arrayable $attributes
+     */
+    public function __construct(array|Arrayable $attributes = []) {
+        $attributes = $attributes instanceof Arrayable
+            ? $attributes->toArray()
+            : $attributes;
 
-        parent::__construct($attrs);
+        parent::__construct($attributes);
     }
 
-    public function toModel() {
+    public function toModel(): Model|FluentModel {
         return $this;
     }
 
-    public function toParam() {
+    public function toParam(): int|string {
         return $this->getKey();
     }
 
-    protected function processRollback() {
+    protected function processRollback(): void {
         $this->rollbackSelfAndAutosavedRelations();
     }
 
-    protected function processSave($options) {
+    /**
+     * @param array<string, mixed> $options
+     */
+    protected function processSave(array $options): bool {
         $this->validate();
 
         return $this->pushSelfAndAutosavedRelations($options);

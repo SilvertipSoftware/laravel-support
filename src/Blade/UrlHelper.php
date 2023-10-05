@@ -13,7 +13,7 @@ use SilvertipSoftware\LaravelSupport\Routing\RestRouter;
 
 trait UrlHelper {
 
-    public static function urlFor($options = null) {
+    public static function urlFor(mixed $options = null): string {
         if (is_string($options)) {
             return $options != 'back'
                 ? $options
@@ -37,6 +37,9 @@ trait UrlHelper {
         }
     }
 
+    /**
+     * @param array<string,mixed> $options
+     */
     protected static function ensureOnlyPathOption(array &$options): void {
         if (!Arr::has($options, 'only_path')) {
             $options['only_path'] = static::generatePathsByDefault() && !Arr::has($options, 'host');

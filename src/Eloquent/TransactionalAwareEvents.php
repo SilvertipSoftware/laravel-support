@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
 use Exception;
@@ -9,11 +11,13 @@ use Illuminate\Support\Arr;
 
 trait TransactionalAwareEvents {
 
-    protected static $orderedTransactionalEvents = ['', 'saving', 'deleting'];
+    /** @var array<string> */
+    protected static array $orderedTransactionalEvents = ['', 'saving', 'deleting'];
 
-    protected static $queuedTransactionalEvents = [];
+    /** @var array<string,array<string,mixed>> */
+    protected static array $queuedTransactionalEvents = [];
 
-    protected static function bootTransactionalAwareEvents() {
+    protected static function bootTransactionalAwareEvents(): void {
         $dispatcher = static::getEventDispatcher();
 
         foreach (static::$orderedTransactionalEvents as $beforeEvent) {
@@ -67,11 +71,11 @@ trait TransactionalAwareEvents {
         });
     }
 
-    protected static function transactionalEventNameFor($transactionEvent, $eventName) {
+    protected static function transactionalEventNameFor(string $transactionEvent, string $eventName): string {
         return 'after' . ucfirst($eventName) . ucfirst($transactionEvent);
     }
 
-    protected function initializeTransactionalAwareEvents() {
+    protected function initializeTransactionalAwareEvents(): void {
         foreach (static::$orderedTransactionalEvents as $eventName) {
             $this->addObservableEvents(static::transactionalEventNameFor('commit', $eventName));
             $this->addObservableEvents(static::transactionalEventNameFor('rollback', $eventName));

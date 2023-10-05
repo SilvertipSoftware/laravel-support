@@ -10,21 +10,25 @@ use Illuminate\Support\Str;
 
 class RestRouter {
 
-    public static $shallowResources = true;
+    public static bool $shallowResources = true;
 
-    public static function url(...$models) {
+    public static function url(mixed ...$models): string {
         list($models, $options) = static::processArgs(...$models);
 
         return static::polymorphicRoute($models, $options);
     }
 
-    public static function path(...$models) {
+    public static function path(mixed ...$models): string {
         list($models, $options) = static::processArgs(...$models);
 
         return static::polymorphicRoute($models, $options, false);
     }
 
-    public static function polymorphicRoute($models, $options = [], $absolute = true) {
+    /**
+     * @param array<Model|string> $models
+     * @param array<string,mixed> $options
+     */
+    public static function polymorphicRoute(array $models, array $options = [], bool $absolute = true): string {
         $models = Arr::flatten([$models]);
 
         $routePrefixes = [];
@@ -61,7 +65,10 @@ class RestRouter {
         return $url;
     }
 
-    protected static function processArgs(...$models) {
+    /**
+     * @return array<mixed>
+     */
+    protected static function processArgs(mixed ...$models): array {
         $options = [];
         $last_arg = end($models);
         if (count($models) <= 1) {
@@ -78,7 +85,18 @@ class RestRouter {
         return [$models, $options];
     }
 
-    protected static function processLastFragment($model, &$prefixes, &$params, &$isCollection, $options) {
+    /**
+     * @param array<mixed> $prefixes
+     * @param array<string,string|int> $params
+     * @param array<string,mixed> $options
+     */
+    protected static function processLastFragment(
+        Model|string $model,
+        array &$prefixes,
+        array &$params,
+        bool &$isCollection,
+        array $options
+    ): void {
         if ($model instanceof Model) {
             $class = get_class($model);
             $isCollection = !$model->exists;
@@ -98,7 +116,17 @@ class RestRouter {
         }
     }
 
-    protected static function processIntermediateFragment($model, &$prefixes, &$params, $options) {
+    /**
+     * @param array<mixed> $prefixes
+     * @param array<string,string|int> $params
+     * @param array<string,mixed> $options
+     */
+    protected static function processIntermediateFragment(
+        Model|string $model,
+        array &$prefixes,
+        array &$params,
+        array $options
+    ): void {
         if ($model instanceof Model) {
             $class = get_class($model);
             $prefixes[] = static::prefixFromClass($class);
@@ -108,7 +136,10 @@ class RestRouter {
         }
     }
 
-    protected static function findRoute($prefix, $isCollection, $options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected static function findRoute(string $prefix, bool $isCollection, array $options): ?string {
         $defaultActions = $isCollection ? [null, 'index', 'store'] : ['show', 'update', 'destroy'];
         $actions = Arr::get($options, 'action', $defaultActions);
 
@@ -124,7 +155,7 @@ class RestRouter {
         return null;
     }
 
-    protected static function prefixFromClass($class) {
+    protected static function prefixFromClass(string $class): string {
         if (method_exists($class, 'modelName')) {
             return call_user_func([$class, 'modelName'])->route_key;
         }
@@ -132,7 +163,7 @@ class RestRouter {
         return Str::plural(Str::kebab(class_basename($class)));
     }
 
-    protected static function parameterNameFromClass($class) {
+    protected static function parameterNameFromClass(string $class): string {
         $value = Str::snake(Str::plural(class_basename($class)));
         $resource_registrar = app('Illuminate\Routing\ResourceRegistrar');
 

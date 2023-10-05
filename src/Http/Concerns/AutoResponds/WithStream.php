@@ -2,11 +2,12 @@
 
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns\AutoResponds;
 
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\View;
 
 trait WithStream {
 
-    protected function createStreamResponse($status = 200) {
+    protected function createStreamResponse(int $status = 200): Response {
         $streamView = $this->viewNameForRoute();
         $data = $this->dataForView();
 
@@ -23,12 +24,12 @@ trait WithStream {
         }
     }
 
-    protected function makeStreamResponseFrom($response) {
+    protected function makeStreamResponseFrom(Response $response): Response {
         return $response
             ->header('Content-Type', 'text/vnd.turbo-stream.html');
     }
 
-    protected function mapRedirectForStream($response) {
+    protected function mapRedirectForStream(Response $response): Response {
         return $this->makeHtmlResponseFrom($response);
     }
 }

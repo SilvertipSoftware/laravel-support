@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class NumberField extends TextField {
 
-    public function render() {
+    public function render(): HtmlString {
         $options = $this->options;
 
         $range = Arr::pull($options, 'in', Arr::pull($options, 'within'));

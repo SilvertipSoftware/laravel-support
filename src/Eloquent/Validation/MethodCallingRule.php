@@ -1,16 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Eloquent\Validation;
 
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Str;
+use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
+use SilvertipSoftware\LaravelSupport\Eloquent\Model;
 
 class MethodCallingRule implements Rule {
 
-    public function __construct($model, $tag, $params) {
-        $this->model = $model;
-        $this->tag = $tag;
-        $this->params = $params;
+    /**
+     * @param array<int, bool|float|int|string> $params
+     */
+    public function __construct(
+        protected Model|FluentModel $model,
+        protected string $tag,
+        protected array $params
+    ) {
         $this->method = $this->methodName($tag);
     }
 
@@ -18,16 +26,19 @@ class MethodCallingRule implements Rule {
         return $this->model->{$this->method}($attribute, $value, $this->params);
     }
 
-    public function message() {
+    /**
+     * @return string|array<string,mixed>
+     */
+    public function message(): string|array {
         $clz = get_class($this->model);
         $prefix = method_exists($clz, 'modelName')
             ? $clz::modelName()->singular
             : str_replace('\\', '', $clz);
 
-        return trans('validation.' . $prefix . '.' . $this->tag, $this->params);
+        return trans('validation.' . $prefix . '.' . $this->tag);
     }
 
-    protected function methodName($tag) {
+    protected function methodName(string $tag): string {
         return 'validate' . Str::studly($tag);
     }
 }

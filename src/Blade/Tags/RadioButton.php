@@ -10,15 +10,20 @@ use Illuminate\Support\HtmlString;
 class RadioButton extends Base {
     use Checkable;
 
-    protected $tagValue;
-
-    public function __construct($objectName, $methodName, $templateObject, $tagValue, $options) {
-        $this->tagValue = $tagValue;
-
+    /**
+     * @param array<string,mixed> $options
+     */
+    public function __construct(
+        ?string $objectName,
+        string $methodName,
+        string $templateObject,
+        protected string|bool|int|float|null $tagValue,
+        array$options
+    ) {
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render() {
+    public function render(): HtmlString {
         $options = $this->options;
         $options['type'] = 'radio';
         $options['value'] = $this->tagValue;
@@ -31,7 +36,7 @@ class RadioButton extends Base {
         return static::tag('input', $options);
     }
 
-    protected function isChecked($value) {
+    protected function isChecked(mixed $value): bool {
         return $value == $this->tagValue;
     }
 }

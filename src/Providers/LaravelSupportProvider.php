@@ -16,7 +16,7 @@ use SilvertipSoftware\LaravelSupport\Routing\UrlHelpers;
 
 class LaravelSupportProvider extends ServiceProvider {
 
-    public function boot() {
+    public function boot(): void {
         RequestAcceptsHelpers::register();
         RequestFreshnessHelpers::register();
         UrlHelpers::register();

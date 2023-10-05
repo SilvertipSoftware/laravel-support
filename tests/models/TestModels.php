@@ -261,7 +261,7 @@ class Movie extends Model {
 }
 
 class Review extends Model {
-    protected $validationRules = [
+    protected array $validationRules = [
         'content' => ['required']
     ];
 

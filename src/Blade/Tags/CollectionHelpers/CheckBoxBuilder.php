@@ -8,6 +8,9 @@ use Illuminate\Support\HtmlString;
 
 class CheckBoxBuilder extends Builder {
 
+    /**
+     * @param array<string,mixed> $extraHtmlOptions
+     */
     public function checkBox(array $extraHtmlOptions = []): HtmlString {
         $htmlOptions = array_merge($extraHtmlOptions, $this->inputHtmlOptions);
         $htmlOptions['multiple'] = true;

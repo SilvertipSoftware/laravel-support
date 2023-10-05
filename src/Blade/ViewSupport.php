@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
+use Closure;
+use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionMethod;
@@ -18,10 +21,15 @@ class ViewSupport {
         TagHelper,
         UrlHelper;
 
-    public static $capturingSections = [];
+    /** @var array<array{name:string, obj:string, gen:string, id:string}> */
+    public static array $capturingSections = [];
 
-    // These are pre-computed by computeRegistrations() (and tested in UT) to avoid reflection at runtime
-    public static $registrations = [
+    /**
+     * These are pre-computed by computeRegistrations() (and tested in UT) to avoid reflection at runtime.
+     *
+     * @var array{helper: array<string|int,mixed>, builder: array<string|int,mixed>}
+     */
+    public static array $registrations = [
         'helper' => [
             "buttonTag" => ['captures' => true],
             "collectionCheckBoxes" => ['captures' => true],
@@ -139,7 +147,7 @@ class ViewSupport {
         ]
     ];
 
-    public static function registerDirectives($helperPrefix = 'fh', $builderPrefix = null) {
+    public static function registerDirectives(?string $helperPrefix = 'fh', ?string $builderPrefix = null): void {
         foreach (static::$registrations['helper'] as $tag => $options) {
             if (is_int($tag)) {
                 $tag = $options;
@@ -161,6 +169,9 @@ class ViewSupport {
         Blade::directive(static::directiveName('endBlock'), static::capturingEndDirectiveCompiler());
     }
 
+    /**
+     * @return array{helper: array<string,array<string,bool>>, builder: array<string,array<string,bool>>}
+     */
     public static function computeRegistrations() {
         $excludedHelperMethods = [
             'computeRegistrations',
@@ -232,7 +243,10 @@ class ViewSupport {
         ];
     }
 
-    public static function registerBuilderDirective($name, $options, $prefix) {
+    /**
+     * @param array{capture?: bool} $options
+     */
+    public static function registerBuilderDirective(string $name, array $options, ?string $prefix): void {
         static::registerDirective(
             static::directiveName([$prefix, $name]),
             'onBuilder',
@@ -241,23 +255,30 @@ class ViewSupport {
         );
     }
 
-    public static function onBuilder(...$args) {
+    public static function onBuilder(mixed ...$args): mixed {
         $method = array_shift($args);
         $builder = array_shift($args);
 
         return call_user_func_array([$builder, $method], $args);
     }
 
-    public static function yieldingOnBuilder(...$args) {
+    /**
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
+    public static function yieldingOnBuilder(mixed ...$args): Generator {
         $method = array_shift($args);
         $builder = array_shift($args);
 
         $yieldingMethod = 'yielding' . ucfirst($method);
         $generator = call_user_func_array([$builder, $yieldingMethod], $args);
         yield from $generator;
+
         return $generator->getReturn();
     }
 
+    /**
+     * @param string|string[] $parts
+     */
     protected static function directiveName(string|array $parts): string {
         $parts = (array)$parts;
         $parts = array_values(array_filter($parts));
@@ -271,13 +292,17 @@ class ViewSupport {
         return implode('', $parts);
     }
 
-    protected static function ensureDirectiveIsNew($name) {
+    protected static function ensureDirectiveIsNew(string $name): void {
         if (array_key_exists($name, Blade::getCustomDirectives())) {
             throw new RuntimeException('LaravelSupport directive ' . $name . ' is already registered');
         }
     }
 
-    protected static function capturingStartDirectiveCompiler($name, $baseMethodName, $insertArg) {
+    protected static function capturingStartDirectiveCompiler(
+        string $name,
+        string $baseMethodName,
+        ?string $insertArg
+    ): Closure {
         return function ($expression) use ($name, $baseMethodName, $insertArg) {
             $matches = null;
             $pattern = '/(.*) as (\$.*)/';
@@ -320,7 +345,7 @@ class ViewSupport {
         };
     }
 
-    protected static function capturingEndDirectiveCompiler() {
+    protected static function capturingEndDirectiveCompiler(): Closure {
         return function ($expression) {
             $code = <<<'ENDCODE'
                     $__env->stopSection(true);
@@ -340,12 +365,16 @@ class ViewSupport {
         };
     }
 
-    protected static function isPreferredBuilderHelper($name) {
+    protected static function isPreferredBuilderHelper(string $name): bool {
         return array_key_exists($name, static::$registrations['builder'])
             || in_array($name, array_values(static::$registrations['builder']));
     }
 
-    protected static function nonCapturingDirectiveCompiler($name, $baseMethodName, $insertArg) {
+    protected static function nonCapturingDirectiveCompiler(
+        string $name,
+        string $baseMethodName,
+        ?string $insertArg
+    ): Closure {
         return function ($expression) use ($baseMethodName, $insertArg) {
             $expr = trim(Blade::stripParentheses($expression));
             $code = <<<'INLINECODE'
@@ -365,7 +394,15 @@ class ViewSupport {
         };
     }
 
-    protected static function registerDirective($name, $baseMethodName, $opts = [], $insertArg = null) {
+    /**
+     * @param array{captures?: bool} $opts
+     */
+    protected static function registerDirective(
+        string $name,
+        string $baseMethodName,
+        array $opts = [],
+        ?string $insertArg = null
+    ): void {
         $canCapture = Arr::get($opts, 'captures', false);
 
         static::ensureDirectiveIsNew($name);
@@ -376,7 +413,10 @@ class ViewSupport {
         }
     }
 
-    protected static function registerHelperDirective($name, $options, $prefix) {
+    /**
+     * @param array{captures?: bool} $options
+     */
+    protected static function registerHelperDirective(string $name, array $options, ?string $prefix): void {
         $prefix = static::isPreferredBuilderHelper($name) ? $prefix : null;
 
         static::registerDirective(

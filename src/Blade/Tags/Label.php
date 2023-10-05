@@ -4,14 +4,28 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
+use Generator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
+use SilvertipSoftware\LaravelSupport\Blade\Tags\Label\LabelBuilder;
 use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
+use Stringable;
 
 class Label extends Base {
 
-    protected $content;
+    protected string|Stringable|null $content;
 
-    public function __construct($objectName, $methodName, $templateObject, $contentOrOptions = null, $options = []) {
+    /**
+     * @param string|Stringable|array<string,mixed>|null $contentOrOptions
+     * @param array<string,mixed> $options
+     */
+    public function __construct(
+        ?string $objectName,
+        string $methodName,
+        string $templateObject,
+        string|Stringable|array|null $contentOrOptions = null,
+        ?array $options = []
+    ) {
         $options = $options ?? [];
         if (is_array($contentOrOptions)) {
             $options = array_merge($options, $contentOrOptions);
@@ -23,7 +37,10 @@ class Label extends Base {
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function yieldingRender($yield = true) {
+    /**
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
+    public function yieldingRender(bool $yield = true): Generator {
         $options = $this->options;
         $tagValue = Arr::pull($options, 'value');
         $nameAndId = $options;
@@ -58,40 +75,11 @@ class Label extends Base {
         return static::labelTag($nameAndId['id'], $content, $options);
     }
 
-    private function makeLabelBuilder($tagValue) {
-        return new class($this->templateObject, $this->objectName, $this->methodName, $this->object, $tagValue) {
-            public $object;
-
-            protected $templateObject;
-            protected $objectName;
-            protected $methodName;
-            protected $tagValue;
-
-            public function __construct($templateObject, $objectName, $methodName, $object, $tagValue) {
-                $this->templateObject = $templateObject;
-                $this->objectName = $objectName;
-                $this->methodName = $methodName;
-                $this->object = $object;
-                $this->tagValue = $tagValue;
-            }
-
-            public function translation() {
-                $methodAndValue = !empty($this->tagValue)
-                    ? $this->methodName . '.' . $this->tagValue
-                    : $this->methodName;
-
-                $translator = new Translator($this->object, $this->objectName, $methodAndValue, 'helpers.label');
-
-                return $translator->translate() ?: StrUtils::humanize($this->methodName);
-            }
-
-            public function __toString() {
-                return $this->translation();
-            }
-        };
+    private function makeLabelBuilder(mixed $tagValue): object {
+        return new LabelBuilder($this->templateObject, $this->objectName, $this->methodName, $this->object, $tagValue);
     }
 
-    private function renderComponent($builder) {
+    private function renderComponent(LabelBuilder $builder): string {
         return $builder->translation();
     }
 }

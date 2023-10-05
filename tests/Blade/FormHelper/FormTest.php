@@ -1102,19 +1102,24 @@ class FormTest extends TestCase {
                 static::$instantiationCount++;
             }
 
-            public function textField($field, $options = []) {
+            public function textField($field, $options = []): HtmlString {
                 return $this->labelWrap($field, parent::textField($field, $options));
             }
 
-            public function textArea($field, $options = []) {
+            public function textArea($field, $options = []): HtmlString {
                 return $this->labelWrap($field, parent::textArea($field, $options));
             }
 
-            public function checkBox($field, $opts = [], $checkedValue = "1", $uncheckedValue = "0") {
+            public function checkBox(
+                string $field,
+                array $opts = [],
+                string|int|bool $checkedValue = "1",
+                string|int|bool|null $uncheckedValue = "0"
+            ): HtmlString {
                 return $this->labelWrap($field, parent::checkBox($field, $opts, $checkedValue, $uncheckedValue));
             }
 
-            private function labelWrap($field, $content) {
+            private function labelWrap($field, $content): HtmlString {
                 return new HtmlString(
                     '<label for="' . $field . '">' . StrUtils::humanize($field) . ':</label> ' . $content . '<br/>'
                 );

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class ColorField extends TextField {
 
-    public function render() {
+    public function render(): HtmlString {
         $options = $this->options;
         $options['value'] = Arr::get($options, 'value', $this->validateColorString($this->value()));
         $this->options = $options;

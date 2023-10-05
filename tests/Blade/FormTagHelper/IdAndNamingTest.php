@@ -129,7 +129,7 @@ class IdAndNamingTest extends TestCase {
     public function testLabelTagWithCallback() {
         $this->assertDomEquals(
             '<label>Blocked</label>',
-            static::labelTag(null, null, function () {
+            static::labelTag(block: function () {
                 return 'Blocked';
             })
         );

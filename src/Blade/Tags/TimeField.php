@@ -8,14 +8,17 @@ use Illuminate\Support\Arr;
 
 class TimeField extends DatetimeField {
 
-    protected $includeSeconds;
+    protected bool $includeSeconds;
 
-    public function __construct($objectName, $methodName, $templateObject, $options = []) {
-        $this->includeSeconds = Arr::pull($options, 'include_seconds', true);
+    /**
+     * @param array<string,mixed> $options
+     */
+    public function __construct(?string $objectName, string $methodName, string $templateObject, array $options = []) {
+        $this->includeSeconds = (bool) Arr::pull($options, 'include_seconds', true);
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    protected function dateFormat() {
+    protected function dateFormat(): string {
         return $this->includeSeconds ? 'H:i:s' : 'H:i';
     }
 }

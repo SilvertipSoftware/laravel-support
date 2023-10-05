@@ -2,7 +2,6 @@
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Lang;
@@ -13,36 +12,43 @@ use RuntimeException;
 
 trait AutosavesRelations {
 
-    protected static $autosavedRelations = [];
-    protected $markedForDestruction = false;
+    /** @var array<string, array<string,mixed>> */
+    protected static array $autosavedRelations = [];
+    protected bool $markedForDestruction = false;
 
-    public static function getAutosavedRelations() {
+    /**
+     * @return array<string>
+     */
+    public static function getAutosavedRelations(): array {
         return array_keys(Arr::get(static::$autosavedRelations, static::class, []));
     }
 
-    public function isAutosaveRelation($name) {
+    public function isAutosaveRelation(string $name): bool {
         return in_array($name, static::getAutosavedRelations());
     }
 
-    public function isMarkedForDestruction() {
+    public function isMarkedForDestruction(): bool {
         return $this->markedForDestruction;
     }
 
-    public function markForDestruction() {
+    public function markForDestruction(): void {
         $this->markedForDestruction = true;
     }
 
-    public function push() {
+    public function push(): bool {
         return $this->save();
     }
 
-    public function refresh() {
+    public function refresh(): static {
         $this->markedForDestruction = false;
 
         return parent::refresh();
     }
 
-    protected static function addAutosavedRelation($names) {
+    /**
+     * @param string|array<string> $names
+     */
+    protected static function addAutosavedRelation(string|array $names): void {
         $autosavedRelations = Arr::get(static::$autosavedRelations, static::class, []);
 
         foreach ((array)$names as $name) {
@@ -57,29 +63,38 @@ trait AutosavesRelations {
         static::$autosavedRelations[static::class] = $autosavedRelations;
     }
 
-    protected static function bootAutosavesRelations() {
+    protected static function bootAutosavesRelations(): void {
         static::registerModelEvent('afterCommit', function ($model) {
             $model->syncAutosavedRelations();
         });
     }
 
-    protected function getAutosaveOptionsFor($relationName) {
+    /**
+     * @return array<string,mixed>
+     */
+    protected function getAutosaveOptionsFor(string $relationName): array {
         return static::$autosavedRelations[static::class][$relationName];
     }
 
-    protected function getInverseRelationNameFor($relationName) {
+    protected function getInverseRelationNameFor(string $relationName): string {
         $method = 'inverseRelationNameFor' . Str::studly($relationName);
 
         return method_exists($this, $method) ? $this->{$method}() : Str::singular($this->getTable());
     }
 
-    protected function loadedAutosavedRelations() {
+    /**
+     * @return array<string,mixed>
+     */
+    protected function loadedAutosavedRelations(): array {
         return array_filter($this->relations, function ($key) {
             return $this->isAutosaveRelation($key);
         }, ARRAY_FILTER_USE_KEY);
     }
 
-    protected function loadedAutosavedRelationsByOrder() {
+    /**
+     * @return array<string,mixed>
+     */
+    protected function loadedAutosavedRelationsByOrder(): array {
         $ret = [
             'pre' => [],
             'post' => [],
@@ -94,7 +109,7 @@ trait AutosavesRelations {
         return $ret;
     }
 
-    protected function phaseForAutosavedRelation($name) {
+    protected function phaseForAutosavedRelation(string $name): string {
         if (!method_exists($this, $name)) {
             throw new RuntimeException('Unknown relation ' . $name . ' on ' . get_class($this));
         }
@@ -119,7 +134,11 @@ trait AutosavesRelations {
         return $order;
     }
 
-    protected function pushAutosavedModels($models, $relationName, $options) {
+    /**
+     * @param ?array<Model> $models
+     * @param array<string,mixed> $options
+     */
+    protected function pushAutosavedModels(?array $models, string $relationName, array $options): bool {
         $ret = true;
 
         foreach (array_filter($models ?: []) as $model) {
@@ -162,7 +181,15 @@ trait AutosavesRelations {
         return $ret;
     }
 
-    protected function pushAutosavedRelation($relationName, $value, $pushOptions) {
+    /**
+     * @param Collection|Model|array<Model>|null $value
+     * @param array<string,mixed> $pushOptions
+     */
+    protected function pushAutosavedRelation(
+        string $relationName,
+        Collection|Model|array|null $value,
+        array $pushOptions
+    ): bool {
         $models = ($value instanceof Collection)
             ? $value->all()
             : ($value instanceof Model ? [$value] : $value);
@@ -174,7 +201,10 @@ trait AutosavesRelations {
         return true;
     }
 
-    protected function pushSelfAndAutosavedRelations($options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function pushSelfAndAutosavedRelations(array $options): bool {
         $relationsToAutosave = $this->loadedAutosavedRelationsByOrder();
 
         foreach ($relationsToAutosave['pre'] as $relationName => $value) {
@@ -196,8 +226,9 @@ trait AutosavesRelations {
         return true;
     }
 
-    protected function syncAutosavedRelations() {
+    protected function syncAutosavedRelations(): void {
         $loadedRelations = $this->loadedAutosavedRelations();
+
         foreach ($loadedRelations as $relationName => $value) {
             if ($value instanceof Collection) {
                 $stillExisting = $value->filter(function ($child) {
@@ -211,7 +242,7 @@ trait AutosavesRelations {
         }
     }
 
-    protected function validateAutosavedRelations() {
+    protected function validateAutosavedRelations(): void {
         $relationsToAutosave = $this->loadedAutosavedRelations();
 
         foreach ($relationsToAutosave as $relationName => $value) {
@@ -223,7 +254,10 @@ trait AutosavesRelations {
         }
     }
 
-    protected function rollbackAutosavedModels($models, $relationName) {
+    /**
+     * @param ?array<Model> $models
+     */
+    protected function rollbackAutosavedModels(?array $models, string $relationName): void {
         foreach (array_filter($models ?: []) as $model) {
             if ($model->isMarkedForDestruction() && $model->id) {
                 $model->exists = true;
@@ -233,7 +267,7 @@ trait AutosavesRelations {
         }
     }
 
-    protected function rollbackSelfAndAutosavedRelations() {
+    protected function rollbackSelfAndAutosavedRelations(): void {
         $this->rollbackSelf();
         // $relationsToRollback = $this->loadedAutosavedRelations();
 
@@ -246,11 +280,17 @@ trait AutosavesRelations {
         // }
     }
 
-    protected function saveSelf($options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function saveSelf(array $options): bool {
         return parent::save();
     }
 
-    protected function validateAutosavedModels($models, $relationName) {
+    /**
+     * @param ?array<Model> $models
+     */
+    protected function validateAutosavedModels(?array $models, string $relationName): void {
         $relationType = class_basename($this->{$relationName}());
 
         foreach (array_filter($models ?: []) as $model) {
@@ -268,7 +308,10 @@ trait AutosavesRelations {
         }
     }
 
-    protected function validationRulesToIgnore($model, $relationName) {
+    /**
+     * @return array<string|array<string,string>>
+     */
+    protected function validationRulesToIgnore(Model $model, string $relationName): array {
         $ignored = [];
 
         $relationType = class_basename($this->{$relationName}());
@@ -302,7 +345,10 @@ trait AutosavesRelations {
         return $ignored;
     }
 
-    protected function validationRulesToIgnoreForParentRelations() {
+    /**
+     * @return array<string>
+     */
+    protected function validationRulesToIgnoreForParentRelations(): array {
         $ignore = [];
         $relationsToAutosave = $this->loadedAutosavedRelationsByOrder();
 

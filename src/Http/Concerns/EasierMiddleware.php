@@ -1,10 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns;
+
+use Closure;
+use Illuminate\Routing\ControllerMiddlewareOptions;
 
 trait EasierMiddleware {
 
-    protected function before($fn, array $options = []) {
+    /**
+     * @param array{only?: string[], except?: string} $options
+     */
+    protected function before(Closure $fn, array $options = []): ControllerMiddlewareOptions {
         $wrapper = function ($request, $next) use ($fn) {
             call_user_func($fn->bindTo($this, $this), $request);
 
@@ -14,7 +22,10 @@ trait EasierMiddleware {
         return $this->middleware($wrapper, $options);
     }
 
-    protected function after($fn, array $options = []) {
+    /**
+     * @param array{only?: string[], except?: string} $options
+     */
+    protected function after(Closure $fn, array $options = []): ControllerMiddlewareOptions {
         $wrapper = function ($request, $next) use ($fn) {
             $response = $next($request);
             call_user_func($fn->bindTo($this, $this), $response);
@@ -25,7 +36,10 @@ trait EasierMiddleware {
         return $this->middleware($wrapper, $options);
     }
 
-    protected function callOnMethods($methodName, $controllerMethods) {
+    /**
+     * @param string[] $controllerMethods
+     */
+    protected function callOnMethods(string $methodName, array $controllerMethods): ControllerMiddlewareOptions {
         return $this->before(function ($request) use ($methodName) {
             $this->{$methodName}($request);
         })->only($controllerMethods);

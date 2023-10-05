@@ -4,21 +4,34 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
+use Closure;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use Stringable;
 
+/**
+ * @phpstan-type OptionHash array<string,mixed>
+ */
 class Select extends Base {
 
-    protected $choices;
+    /** @var string|Stringable|array<mixed>|Collection|null */
+    protected string|Stringable|array|Collection|null $choices;
 
+    /**
+     * @param class-string $templateObject
+     * @param string|Stringable|array<mixed>|Collection|null $choices
+     * @param OptionHash $options
+     * @param OptionHash $htmlOptions
+     */
     public function __construct(
-        $objectName,
-        $methodName,
-        $templateObject,
-        $choices,
-        $options,
-        $htmlOptions,
-        $block = null
+        string $objectName,
+        string $methodName,
+        string $templateObject,
+        string|Stringable|array|Collection|null $choices,
+        array $options,
+        array $htmlOptions,
+        ?Closure $block = null
     ) {
         if ($block) {
             $choices = $block();
@@ -37,7 +50,7 @@ class Select extends Base {
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render() {
+    public function render(): HtmlString {
         $optionTagsOptions = [
             'selected' => Arr::get($this->options, 'selected', $this->value() === null ? '' : $this->value()),
             'disabled' => Arr::get($this->options, 'disabled')
@@ -50,7 +63,7 @@ class Select extends Base {
         return $this->selectContentTag($optionTags, $this->options, $this->htmlOptions);
     }
 
-    protected function areChoicesGrouped() {
+    protected function areChoicesGrouped(): bool {
         if (empty($this->choices)) {
             return false;
         }

@@ -5,16 +5,24 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class WeekdaySelect extends Base {
 
-    public function __construct($objectName, $methodName, $templateObject, $options, $htmlOptions) {
-        $this->htmlOptions = $htmlOptions;
-
+    /**
+     * @param array<string,mixed> $htmlOptions
+     */
+    public function __construct(
+        ?string $objectName,
+        string $methodName,
+        string $templateObject,
+        array $options,
+        protected array $htmlOptions
+    ) {
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render() {
+    public function render(): HtmlString {
         return $this->selectContentTag(
             static::weekdayOptionsForSelect(
                 $this->value() ?: Arr::get($this->options, 'selected'),

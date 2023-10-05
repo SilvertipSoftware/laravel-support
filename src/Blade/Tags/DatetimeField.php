@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 
 use Carbon\Carbon;
+use DateTime;
 use Exception;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 use RuntimeException;
 
 class DatetimeField extends TextField {
 
-    public function render() {
+    public function render(): HtmlString {
         $options = $this->options;
         $options['value'] = Arr::has($options, 'value')
             ? $this->stringifyValue(Arr::get($options, 'value'))
@@ -24,11 +26,11 @@ class DatetimeField extends TextField {
         return parent::render();
     }
 
-    protected function dateFormat() {
+    protected function dateFormat(): string {
         throw new RuntimeException('implement in subclass');
     }
 
-    protected function datetimeValue($value) {
+    protected function datetimeValue(mixed $value): mixed {
         if (is_string($value)) {
             try {
                 $value = Carbon::parse($value);
@@ -42,7 +44,7 @@ class DatetimeField extends TextField {
         return $value;
     }
 
-    protected function formatDate($value) {
+    protected function formatDate(mixed $value): ?string {
         if (!$value) {
             return null;
         }
@@ -54,7 +56,7 @@ class DatetimeField extends TextField {
         }
     }
 
-    protected function stringifyValue($value) {
+    protected function stringifyValue(mixed $value): string {
         return is_string($value)
             ? $value
             : $this->formatDate($value);

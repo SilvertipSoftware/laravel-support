@@ -9,7 +9,7 @@ use Illuminate\Support\HtmlString;
 
 class FileField extends TextField {
 
-    public function render() {
+    public function render(): HtmlString {
         $includeHidden = Arr::pull($this->options, 'include_hidden');
         $options = $this->options;
         $this->addDefaultNameAndId($options);
@@ -21,7 +21,10 @@ class FileField extends TextField {
         return parent::render();
     }
 
-    private function hiddenFieldForMultipleFile($options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    private function hiddenFieldForMultipleFile(array $options): HtmlString {
         $opts = [
             'name' => $options['name'],
             'type' => 'hidden',

@@ -11,17 +11,21 @@ use Illuminate\Support\HtmlString;
 class CheckBox extends Base {
     use Checkable;
 
-    protected $checkedValue;
-    protected $uncheckedValue;
-
-    public function __construct($objectName, $methodName, $templateObject, $checkedValue, $uncheckedValue, $options) {
-        $this->checkedValue = $checkedValue;
-        $this->uncheckedValue = $uncheckedValue;
-
+    /**
+     * @param array<string,mixed> $options
+     */
+    public function __construct(
+        ?string $objectName,
+        string $methodName,
+        string $templateObject,
+        protected string|int|bool $checkedValue,
+        protected string|int|bool|null $uncheckedValue,
+        array $options
+    ) {
         parent::__construct($objectName, $methodName, $templateObject, $options);
     }
 
-    public function render() {
+    public function render(): HtmlString {
         $options = $this->options;
         $options['type'] = 'checkbox';
         $options['value'] = $this->checkedValue;
@@ -47,7 +51,10 @@ class CheckBox extends Base {
         return $checkbox;
     }
 
-    protected function hiddenFieldForCheckbox($options) {
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function hiddenFieldForCheckbox(array $options): HtmlString {
         if ($this->uncheckedValue !== false && $this->uncheckedValue !== null) {
             $opts = array_merge(
                 Arr::only($options, ['name', 'disabled', 'form']),
@@ -56,10 +63,10 @@ class CheckBox extends Base {
             return static::tag('input', $opts);
         }
 
-        return '';
+        return new HtmlString();
     }
 
-    protected function isChecked($value) {
+    protected function isChecked(mixed $value): bool {
         if (is_bool($value)) {
             return $value === !!$this->checkedValue;
         } elseif ($value === null) {

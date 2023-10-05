@@ -10,28 +10,37 @@ use RuntimeException;
 
 trait NestedAttributes {
 
-    protected static $acceptsNestedAttributesFor = [];
+    /** @var array<string, array<string, mixed>> */
+    protected static array $acceptsNestedAttributesFor = [];
 
-    public static function getNestedAttributes() {
+    /**
+     * @return array<string>
+     */
+    public static function getNestedAttributes(): array {
         return array_keys(Arr::get(static::$acceptsNestedAttributesFor, static::class, []));
     }
 
-    public function isNestedAttribute($name) {
+    public function isNestedAttribute(string $name): bool {
         return in_array($name, static::getNestedAttributes());
     }
 
-    public function setAttribute($key, $value) {
+    public function setAttribute(mixed $key, mixed $value): mixed {
         if (str_contains($key, '_attributes')) {
             $relationName = str_replace('_attributes', '', $key);
             if ($this->isNestedAttribute($relationName)) {
-                return $this->assignNestedAttributes($relationName, $value);
+                $this->assignNestedAttributes($relationName, $value);
+                return $this;
             }
         }
 
         return parent::setAttribute($key, $value);
     }
 
-    protected static function addNestedAttribute($names, $options = []) {
+    /**
+     * @param string|array<string> $names
+     * @param array<string,mixed> $options
+     */
+    protected static function addNestedAttribute(string|array $names, array $options = []): void {
         $nestedAttributes = Arr::get(static::$acceptsNestedAttributesFor, static::class, []);
         $options = array_merge(['allow_destroy' => false, 'update_only' => false], $options);
 
@@ -59,7 +68,10 @@ trait NestedAttributes {
         return (bool) Arr::get($this->getOptionsForNestedAttributes($relationName), 'allow_destroy');
     }
 
-    protected function assignNestedAttributes($relationName, $attrs) {
+    /**
+     * @param array<string,mixed> $attrs
+     */
+    protected function assignNestedAttributes(string $relationName, array $attrs): void {
         $relationType = class_basename($this->{$relationName}());
 
         switch ($relationType) {
@@ -76,11 +88,12 @@ trait NestedAttributes {
             default:
                 throw new RuntimeException("Nested attributes for $relationType not supported");
         }
-
-        return $this;
     }
 
-    protected function assignNestedAttributesForOneToOne($relationName, $attrs) {
+    /**
+     * @param array<string,mixed> $attrs
+     */
+    protected function assignNestedAttributesForOneToOne(string $relationName, array $attrs): void {
         $existingRecord = $this->{$relationName};
         $relation = $this->{$relationName}();
         $options = $this->getOptionsForNestedAttributes($relationName);
@@ -109,7 +122,10 @@ trait NestedAttributes {
         }
     }
 
-    protected function assignNestedAttributesForBelongsTo($relationName, $attrs) {
+    /**
+     * @param array<string,mixed> $attrs
+     */
+    protected function assignNestedAttributesForBelongsTo(string $relationName, array $attrs): void {
         $existingRecord = $this->{$relationName};
         $relation = $this->{$relationName}();
         $options = $this->getOptionsForNestedAttributes($relationName);
@@ -142,7 +158,10 @@ trait NestedAttributes {
         }
     }
 
-    protected function assignNestedAttributesForOneToMany($relationName, $attrsArray) {
+    /**
+     * @param array<string,array<string,mixed>> $attrsArray
+     */
+    protected function assignNestedAttributesForOneToMany(string $relationName, array $attrsArray): void {
         $relation = $this->{$relationName}();
         $options = $this->getOptionsForNestedAttributes($relationName);
 
@@ -180,10 +199,15 @@ trait NestedAttributes {
             }
         }
 
+        // @phpstan-ignore-next-line
         $this->setRelation($relationName, collect($existingRecords));
     }
 
-    protected function assignOrMarkForDestruction($model, $attrs, $options) {
+    /**
+     * @param array<string,mixed> $attrs
+     * @param array<string,mixed> $options
+     */
+    protected function assignOrMarkForDestruction(Model|FluentModel $model, array $attrs, array $options): void {
         $model->fill(Arr::except($attrs, $this->getUnassignableKeys($model)));
 
         if ($this->hasDestroyFlag($attrs) && Arr::get($options, 'allow_destroy')) {
@@ -191,6 +215,9 @@ trait NestedAttributes {
         }
     }
 
+    /**
+     * @param array<string,mixed> $attributes
+     */
     protected function callRejectIf(string $relationName, array $attributes): bool {
         if ($this->willBeDestroyed($relationName, $attributes)) {
             return false;
@@ -207,26 +234,41 @@ trait NestedAttributes {
         return false;
     }
 
-    protected function getOptionsForNestedAttributes($name) {
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getOptionsForNestedAttributes(string $name): array {
         return static::$acceptsNestedAttributesFor[static::class][$name];
     }
 
-    protected function getUnassignableKeys($model = null) {
+    /**
+     * @return array<string>
+     */
+    protected function getUnassignableKeys(Model|FluentModel|null $model = null): array {
         return [
             $model ? $model->primaryKey : 'id',
             '_destroy'
         ];
     }
 
-    protected function hasDestroyFlag(array $attrs): bool {
-        return (bool) Arr::get($attrs, '_destroy', false);
+    /**
+     * @param array<string,mixed> $attributes
+     */
+    protected function hasDestroyFlag(array $attributes): bool {
+        return (bool) Arr::get($attributes, '_destroy', false);
     }
 
+    /**
+     * @param array<string,mixed> $attributes
+     */
     protected function rejectNewRecord(string $relationName, array $attributes): bool {
         return $this->willBeDestroyed($relationName, $attributes)
             || $this->callRejectIf($relationName, $attributes);
     }
 
+    /**
+     * @param array<string,mixed> $attributes
+     */
     protected function willBeDestroyed(string $relationName, array $attributes): bool {
         return $this->allowsDestroy($relationName) && $this->hasDestroyFlag($attributes);
     }

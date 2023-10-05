@@ -1,18 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Eloquent\Validation;
 
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Validator;
+use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
+use SilvertipSoftware\LaravelSupport\Eloquent\Model;
 
 class ModelValidator extends Validator {
 
-    protected $model;
-    protected $usesHumanizer;
-
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $rules
+     * @param array<string, mixed> $messages
+     * @param array<string, mixed> $customAttributes
+     */
     public function __construct(
-        $model,
+        protected Model|FluentModel $model,
         Translator $translator,
         array $data,
         array $rules,
@@ -20,21 +27,9 @@ class ModelValidator extends Validator {
         array $customAttributes = []
     ) {
         parent::__construct($translator, $data, $rules, $messages, $customAttributes);
-
-        $this->model = $model;
-        $this->usesHumanizer = method_exists($this->model, 'humanAttributeName');
     }
 
-    // for old laravel
-    public function callModelMethod($method, $attribute, $value, $params) {
-        return $this->model->{$method}($attribute, $value, $params);
-    }
-
-    protected function getAttributeFromTranslations($name) {
-        if ($this->usesHumanizer) {
-            return $this->model->humanAttributeName($name);
-        }
-
-        return Arr::get($this->translator->get('validation.attributes'), $name);
+    protected function getAttributeFromTranslations($name): string {
+        return $this->model->humanAttributeName($name);
     }
 }

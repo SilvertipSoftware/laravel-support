@@ -37,7 +37,10 @@ class Utils {
         return $startingChar . $followingCharacters;
     }
 
-    public static function determineTagArgs(...$args): array {
+    /**
+     * @return array<mixed>
+     */
+    public static function determineTagArgs(mixed ...$args): array {
         $lastIx = count($args) - 1;
 
         // ensure first is not an array
@@ -50,8 +53,10 @@ class Utils {
 
         // move callback to end of array
         for ($ix = 0; $ix <= $lastIx; $ix++) {
-            if (!is_string($args[$ix]) && is_callable($args[$ix])) {
-                $args[$lastIx] = $args[$ix];
+            $arg = $args[$ix];
+
+            if (!is_string($arg) && is_callable($arg)) {
+                $args[$lastIx] = $arg;
                 break;
             }
         }

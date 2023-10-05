@@ -2,14 +2,16 @@
 
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns\AutoResponds;
 
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 
 trait WithJavascript {
 
-    protected $javascriptRedirectView = 'js_redirect';
+    protected string $javascriptRedirectView = 'js_redirect';
 
-    protected function createJsResponse($status = 200) {
+    protected function createJsResponse(int $status = 200): Response {
         $data = $this->dataForView();
 
         $content = $this->wrapJavascriptViewContent($this->viewNameForRoute(), $data);
@@ -17,13 +19,12 @@ trait WithJavascript {
         return $this->makeJavascriptResponseFrom(response($content, $status));
     }
 
-    protected function makeJavascriptResponseFrom($response) {
+    protected function makeJavascriptResponseFrom(Response $response): Response {
         return $response
-            ->header('Content-Type', 'text/javascript')
-            ->header('X-Xhr-Redirect', true);
+            ->header('Content-Type', 'text/javascript');
     }
 
-    protected function mapRedirectForJs($response) {
+    protected function mapRedirectForJs(RedirectResponse $response): Response {
         $data = [
             'redirectToUrl' => $response->getTargetUrl()
         ];
@@ -33,7 +34,10 @@ trait WithJavascript {
         return $this->makeJavascriptResponseFrom(response($content, $response->status()));
     }
 
-    protected function wrapJavascriptViewContent($viewName, $data = []) {
+    /**
+     * @param array<string,mixed> $data
+     */
+    protected function wrapJavascriptViewContent(string $viewName, array $data = []): string {
         return "(function() {\n"
             . view($viewName, $data)->render()
             . "\n})();";

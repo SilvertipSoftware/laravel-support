@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
+use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
+use SilvertipSoftware\LaravelSupport\Eloquent\Model;
+use SilvertipSoftware\LaravelSupport\Eloquent\Naming\Name;
+
 trait ModelUtils {
 
-    public static function domClass($modelOrClass, $prefix = null) {
+    public static function domClass(object|string $modelOrClass, ?string $prefix = null): string {
         $singular = static::modelNameFrom($modelOrClass)->param_key;
 
         return $prefix
@@ -14,7 +18,7 @@ trait ModelUtils {
             : $singular;
     }
 
-    public static function domId($model, $prefix = null) {
+    public static function domId(Model $model, ?string $prefix = null): string {
         $id = $model->getKey();
 
         return $id
@@ -22,7 +26,7 @@ trait ModelUtils {
             : static::domClass($model, $prefix ?? 'new');
     }
 
-    protected static function convertToModel($obj) {
+    protected static function convertToModel(mixed $obj): mixed {
         $hasMethods = is_object($obj) || is_string($obj);
 
         if ($hasMethods && method_exists($obj, 'toModel')) {
@@ -32,7 +36,7 @@ trait ModelUtils {
         return $obj;
     }
 
-    protected static function modelNameFrom($obj) {
+    protected static function modelNameFrom(string|object|null $obj): ?Name {
         if ($obj == null) {
             return null;
         }
@@ -41,7 +45,7 @@ trait ModelUtils {
         return $model->modelName();
     }
 
-    public static function isManyRelation($class) {
+    public static function isManyRelation(string $class): bool {
         $base = class_basename($class);
 
         $relationsReturningCollections = [

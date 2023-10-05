@@ -2,11 +2,15 @@
 
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns;
 
+use Illuminate\Contracts\View\ViewObject;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request as RequestObject;
+use Illuminate\Routing\Route as RouteObject;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 trait AutoResponds {
     use AutoResponds\WithHtml,
@@ -14,9 +18,10 @@ trait AutoResponds {
         AutoResponds\WithJson,
         AutoResponds\WithStream;
 
-    protected static $controllerRootNamespace = 'App\\Http\\Controllers';
-
-    public function callAction($method, $parameters) {
+    /**
+     * @param array<string,mixed> $parameters
+     */
+    public function callAction(mixed $method, mixed $parameters): mixed {
         $request = request();
         $request->controller = View::share('controller', $this);
 
@@ -33,11 +38,12 @@ trait AutoResponds {
         return $response;
     }
 
-    protected function controllerRootNamespace() {
-        return 'App\\Http\\Controllers';
+    protected function controllerRootNamespace(): string {
+        return 'App\Http\Controllers';
     }
 
-    protected function createResponse($request) {
+    protected function createResponse(RequestObject $request): Response {
+        // @phpstan-ignore-next-line
         if (Request::hasMacro('isFresh') && $request->isFresh()) {
             return response(null)->setNotModified();
         }
@@ -52,15 +58,18 @@ trait AutoResponds {
         return $response;
     }
 
-    protected function dataForView() {
+    /**
+     * @return array<string,mixed>
+     */
+    protected function dataForView(): array {
         return get_object_vars($this);
     }
 
-    protected function desiredResponseFormat() {
+    protected function desiredResponseFormat(): string {
         return request()->responseFormat ?: 'html';
     }
 
-    protected function mapRedirectResponse($request, $response) {
+    protected function mapRedirectResponse(RequestObject $request, RedirectResponse $response): mixed {
         $methodName = 'mapRedirectFor' . ucfirst($this->desiredResponseFormat());
 
         if (method_exists($this, $methodName)) {
@@ -70,11 +79,11 @@ trait AutoResponds {
         return $response;
     }
 
-    protected function viewNamePrefix() {
+    protected function viewNamePrefix(): string {
         return '';
     }
 
-    protected function viewNameForRoute($format = null, $route = null) {
+    protected function viewNameForRoute(?string $format = null, ?RouteObject $route = null): string {
         if ($route == null) {
             $route = Route::getCurrentRoute();
         }

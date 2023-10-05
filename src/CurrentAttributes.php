@@ -7,9 +7,6 @@ use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
 
 class CurrentAttributes extends FluentModel {
 
-    protected $app;
-
-    public function __construct(Application $app) {
-        $this->app = $app;
+    public function __construct(protected Application $app) {
     }
 }

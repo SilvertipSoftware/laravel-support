@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\URL;
 
 class UrlHelpers {
 
-    public static function register() {
+    public static function register(): void {
         URL::macro('url', function (...$models) {
             return RestRouter::url(...$models);
         });

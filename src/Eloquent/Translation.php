@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Eloquent;
 
 use Illuminate\Support\Arr;
@@ -9,7 +11,10 @@ use SilvertipSoftware\LaravelSupport\Libs\StrUtils;
 
 trait Translation {
 
-    public static function humanAttributeName($attr, $opts = []) {
+    /**
+     * @param array<string, mixed> $opts
+     */
+    public static function humanAttributeName(string $attr, array $opts = []): string {
         $parts = explode('.', $attr);
         $attribute = array_pop($parts);
         $namespace = !empty($parts) ? implode('/', $parts) : null;
@@ -38,7 +43,7 @@ trait Translation {
         );
     }
 
-    public static function i18nScope() {
+    public static function i18nScope(): string {
         return 'eloquent';
     }
 }

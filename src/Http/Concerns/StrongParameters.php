@@ -8,7 +8,7 @@ use SilvertipSoftware\LaravelSupport\Libs\StrongParameters\Parameters;
 
 trait StrongParameters {
 
-    protected function params() {
+    protected function params(): Parameters {
         return new Parameters(request()->all());
     }
 }

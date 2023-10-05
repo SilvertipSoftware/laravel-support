@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
+use Closure;
 use Exception;
+use Generator;
+use Stringable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 
 trait TagHelper {
 
-    protected static $tagBuilderInstance;
+    protected static ?TagBuilder $tagBuilderInstance = null;
 
-    public static function buildTagValues(...$args) {
+    /**
+     * @return array<mixed>
+     */
+    public static function buildTagValues(mixed ...$args): array {
         $tagValues = [];
 
         foreach ($args as $arg) {
@@ -36,7 +42,15 @@ trait TagHelper {
         return $tagValues;
     }
 
-    public static function tag($name = null, $options = null, $open = false, $mustEscape = true) {
+    /**
+     * @param array<string,mixed>|null $options
+     */
+    public static function tag(
+        ?string $name = null,
+        ?array $options = null,
+        bool $open = false,
+        bool $mustEscape = true
+    ): TagBuilder|HtmlString {
         if ($name == null) {
             if (static::$tagBuilderInstance == null) {
                 static::$tagBuilderInstance = static::newTagBuilder();
@@ -53,7 +67,7 @@ trait TagHelper {
         }
     }
 
-    public static function tokenList(...$args) {
+    public static function tokenList(mixed ...$args): string {
         $tokens = array_unique(
             Arr::flatten(
                 array_map(function ($v) {
@@ -67,15 +81,21 @@ trait TagHelper {
         }, $tokens));
     }
 
-    public static function classNames(...$args) {
+    public static function classNames(mixed ...$args): string {
         return static::tokenList(...$args);
     }
 
-    public static function closeTag($name) {
+    public static function closeTag(string $name): HtmlString {
         return new HtmlString('</' . $name . '>');
     }
 
-    public static function contentTag($name, $content = null, $options = null, $mustEscape = true, $block = null) {
+    public static function contentTag(
+        string $name,
+        mixed $content = null,
+        mixed $options = null,
+        mixed $mustEscape = true,
+        ?Closure $block = null
+    ): HtmlString {
         list($content, $options, $mustEscape, $block) = Utils::determineTagArgs(
             $content,
             $options,
@@ -94,7 +114,7 @@ trait TagHelper {
         return $generator->getReturn();
     }
 
-    public static function cdataSection($content = null) {
+    public static function cdataSection(string|HtmlString|null $content = null): HtmlString {
         if ($content && is_callable($content)) {
             $content = $content();
         }
@@ -104,22 +124,29 @@ trait TagHelper {
         return new HtmlString('<![CDATA[' . $content . ']]>');
     }
 
-    public static function escapeOnce($html) {
+    public static function escapeOnce(string|HtmlString|null $html): HtmlString {
         throw new Exception("TBD");
     }
 
+    /**
+     * @param string|Stringable|array<mixed>|null $content
+     * @param array<string,mixed> $options
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
     public static function yieldingContentTag(
-        $name,
-        $content = null,
-        $options = null,
-        $mustEscape = false,
-        $yield = true
-    ) {
+        string $name,
+        string|Stringable|array|null $content = null,
+        array $options = null,
+        bool $mustEscape = false,
+        bool $yield = true
+    ): Generator {
         list($content, $options, $mustEscape) = Utils::determineTagArgs(
             $content,
             $options,
             $mustEscape
         );
+        /** @phpstan-assert string|HtmlString|null $content */
+        /** @phpstan-assert array<string,mixed> $options */
 
         $options = $options ?? [];
         $mustEscape = $mustEscape ?? false;
@@ -136,7 +163,7 @@ trait TagHelper {
         return static::newTagBuilder()->contentTagString($name, $content, $options, $mustEscape);
     }
 
-    protected static function newTagBuilder() {
+    protected static function newTagBuilder(): TagBuilder {
         return new TagBuilder(static::class);
     }
 }

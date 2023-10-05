@@ -10,11 +10,15 @@ use Illuminate\Support\Str;
 
 class StrUtils {
 
-    public static function humanize($str) {
+    public static function humanize(string $str): string {
         return Str::headline($str);
     }
 
-    public static function translate($possibleKeys, $fallback, $opts = []) {
+    /**
+     * @param string[] $possibleKeys
+     * @param array<string,mixed> $opts
+     */
+    public static function translate(array $possibleKeys, string $fallback, array $opts = []): string {
         $count = Arr::get($opts, 'count', 1);
         $locale = Arr::get($opts, 'locale', null);
 

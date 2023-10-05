@@ -2,6 +2,7 @@
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent\Naming;
 
+use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Fluent;
@@ -9,11 +10,9 @@ use Illuminate\Support\Str;
 
 class Name extends Fluent {
 
-    public static $rootModelNamespace = 'App\\Models';
+    public static string|Closure $rootModelNamespace = 'App\\Models';
 
-    protected $class;
-
-    public function __construct($class, $namespace = null) {
+    public function __construct(protected string $class, string $namespace = null) {
         $name = Str::after($class, value(static::$rootModelNamespace, $class) . '\\');
         $unnamespaced = $namespace ? Str::after($class, $namespace . '\\') : null;
         $baseName = class_basename($class);
@@ -56,7 +55,10 @@ class Name extends Fluent {
         $this->class = $class;
     }
 
-    public function human($opts = []) {
+    /**
+     * @param array<int, mixed> $opts
+     */
+    public function human(array $opts = []): string {
         $fullKey = $this->qualifiedI18nKeyFor($this->class, $this->i18n_key);
         $locale = Arr::get($opts, 'locale');
 
@@ -71,11 +73,11 @@ class Name extends Fluent {
         return $this->attributes['human'];
     }
 
-    private function tableize($str) {
+    private function tableize(string $str): string {
         return Str::plural(str_replace('\\_', '/', Str::snake($str)));
     }
 
-    private function qualifiedI18nKeyFor($class, $i18nKey) {
+    private function qualifiedI18nKeyFor(string $class, string $i18nKey): string {
         $scope = method_exists($class, 'i18nScope')
             ? $class::i18nScope()
             : 'eloquent';

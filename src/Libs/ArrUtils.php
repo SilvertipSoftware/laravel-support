@@ -8,6 +8,10 @@ use Illuminate\Support\Arr;
 
 class ArrUtils {
 
+    /**
+     * @param array<string|int,mixed> $arr
+     * @return array<string,mixed>
+     */
     public static function extractOptions(array &$arr): array {
         $opts = [];
 

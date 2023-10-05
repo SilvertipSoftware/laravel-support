@@ -7,21 +7,28 @@ namespace SilvertipSoftware\LaravelSupport\Blade\Tags\CollectionHelpers;
 use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
+use SilvertipSoftware\LaravelSupport\Blade\Tags\Label\LabelBuilder;
 
 class Builder {
 
+    /**
+     * @param array<string,mixed> $inputHtmlOptions
+     */
     public function __construct(
-        protected $templateObject,
-        protected $objectName,
-        protected $methodName,
-        public $object,
-        protected $sanitizedAttributeName,
-        public $text,
-        public $value,
-        protected $inputHtmlOptions
+        protected string $templateObject,
+        protected ?string $objectName,
+        protected string $methodName,
+        public mixed $object,
+        protected string $sanitizedAttributeName,
+        public mixed $text,
+        public mixed $value,
+        protected array $inputHtmlOptions
     ) {
     }
 
+    /**
+     * @param array<string,mixed> $labelHtmlOptions
+     */
     public function label(array $labelHtmlOptions = [], ?callable $block = null): HtmlString {
         $yield = $block != null;
         $generator = $this->yieldingLabel($labelHtmlOptions, $yield);
@@ -34,6 +41,10 @@ class Builder {
         return $generator->getReturn();
     }
 
+    /**
+     * @param array<string,mixed> $labelHtmlOptions
+     * @return Generator<int,\stdClass,null,HtmlString>
+     */
     public function yieldingLabel(array $labelHtmlOptions = [], bool $yield = true): Generator {
         $htmlOptions = array_merge(
             Arr::only($this->inputHtmlOptions, ['index', 'namespace']),

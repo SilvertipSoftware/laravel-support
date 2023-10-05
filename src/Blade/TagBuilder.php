@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Blade;
 
+use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Stringable;
 
 class TagBuilder {
 
@@ -42,16 +44,36 @@ class TagBuilder {
     public function __construct(protected string $helper) {
     }
 
+    /**
+     * @param array<string,mixed> $attributes
+     */
     public function attributes(array $attributes): HtmlString {
         return new HtmlString(trim($this->tagOptions($attributes)));
     }
 
-    public function p(string|array|null $content = null, array $options = []): HtmlString {
+    /**
+     * @param string|Stringable|array<string,mixed>|null $content
+     * @param array<string,mixed> $options
+     */
+    public function p(string|Stringable|array|null $content = null, array $options = []): HtmlString {
         return $this->tagString('p', $content, $options);
     }
 
-    public function tagString(string $name, $content = null, $options = [], $callback = null): HtmlString {
+    /**
+     * @param string|Stringable|array<string,mixed>|null $content
+     * @param array<string,mixed> $options
+     */
+    public function tagString(
+        string $name,
+        string|Stringable|array|Closure|null $content = null,
+        array|Closure|null $options = [],
+        ?Closure $callback = null
+    ): HtmlString {
         list($content, $options, $callback) = Utils::determineTagArgs($content, $options, $callback);
+        /** @phpstan-assert string|Stringable|null $content */
+        /** @phpstan-assert array<string,mixed> $options */
+        /** @phpstan-assert ?Closure $callback */
+
         $options = $options ?? [];
         $mustEscape = Arr::pull($options, 'escape', true);
 
@@ -72,7 +94,15 @@ class TagBuilder {
         }
     }
 
-    public function contentTagString(string $name, $content, $options, $mustEscape = true): HtmlString {
+    /**
+     * @param array<string,mixed> $options
+     */
+    public function contentTagString(
+        string $name,
+        string|Stringable|null $content,
+        array $options,
+        bool $mustEscape = true
+    ): HtmlString {
         $tagOptions = $this->tagOptions($options, $mustEscape);
 
         if ($mustEscape) {
@@ -98,6 +128,9 @@ class TagBuilder {
         );
     }
 
+    /**
+     * @param ?array<string,mixed> $options
+     */
     public function tagOptions(?array $options, bool $mustEscape = true): ?string {
         if (empty($options)) {
             return null;
@@ -142,7 +175,7 @@ class TagBuilder {
         return $key . '="' . $key . '"';
     }
 
-    public function tagOption(string $key, $value, $mustEscape): string {
+    public function tagOption(string $key, mixed $value, bool $mustEscape): string {
         $key = $mustEscape ? Utils::xmlNameEscape($key) : $key;
         if (is_array($value)) {
             if ($key == 'class') {
@@ -161,7 +194,7 @@ class TagBuilder {
         return $key . '="' . $value . '"';
     }
 
-    protected function prefixTagOption(string $prefix, string $key, $value, $mustEscape): string {
+    protected function prefixTagOption(string $prefix, string $key, mixed $value, bool $mustEscape): string {
         $key = $prefix . '-' . self::dasherize($key);
         if (!(is_string($value) || is_numeric($value) || $value instanceof HtmlString)) {
             $value = json_encode($value);
@@ -170,11 +203,14 @@ class TagBuilder {
         return $this->tagOption($key, $value, $mustEscape);
     }
 
-    public function __call($method, $args) {
+    /**
+     * @param array<mixed> $args
+     */
+    public function __call(string $method, array $args): HtmlString {
         return $this->tagString($method, ...$args);
     }
 
-    public function __get($attr) {
+    public function __get(string $attr): HtmlString {
         return $this->tagString($attr);
     }
 

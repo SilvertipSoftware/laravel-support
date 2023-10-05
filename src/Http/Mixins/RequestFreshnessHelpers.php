@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SilvertipSoftware\LaravelSupport\Http\Mixins;
 
 use Carbon\Carbon;
@@ -9,7 +11,7 @@ use Illuminate\Support\Fluent;
 
 class RequestFreshnessHelpers {
 
-    public static function register() {
+    public static function register(): void {
         Request::macro('setResponseFreshnessInfo', function (array $info) {
             // @phpstan-ignore-next-line
             $this->responseFreshnessInfo = new Fluent($info);

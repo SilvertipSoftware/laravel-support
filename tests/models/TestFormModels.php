@@ -46,9 +46,9 @@ class Post extends Model {
 
     private $privateProperty = 'PRIVATE';
 
-    public function toParam() {
-        return $this->id;
-    }
+    // public function toParam(): int|string {
+    //     return $this->id;
+    // }
 
     public function setAuthorAttributes($attrs) {
     }
@@ -61,13 +61,13 @@ class Post extends Model {
 }
 
 class PostDelegate extends Post {
-    public static function humanAttributeName($attr, $opts = []) {
+    public static function humanAttributeName(string $attr, array $opts = []): string {
         return 'Delegate ' . parent::humanAttributeName($attr, $opts);
     }
 }
 
 class PostDelegator extends Post {
-    public function toModel() {
+    public function toModel(): Model|FluentModel {
         return new PostDelegate();
     }
 }
