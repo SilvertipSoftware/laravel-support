@@ -25,7 +25,7 @@ trait Transactions {
         });
     }
 
-    public function delete(): bool {
+    public function delete() {
         $ret = false;
 
         try {
