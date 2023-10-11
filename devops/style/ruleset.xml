@@ -49,4 +49,7 @@
         </properties>
     </rule>
 
+    <rule ref="Internal.NoCodeFound">
+        <exclude-pattern>tests/views/*</exclude-pattern>
+    </rule>
 </ruleset>
