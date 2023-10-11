@@ -7,10 +7,14 @@ namespace SilvertipSoftware\LaravelSupport\Libs\StrongParameters;
 use ArrayAccess;
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use JsonSerializable;
+use RuntimeException;
+use SilvertipSoftware\LaravelSupport\Libs\ArrUtils;
 
-class Parameters implements Arrayable, ArrayAccess {
+class Parameters implements Arrayable, ArrayAccess, Jsonable, JsonSerializable {
 
     /** @var array<array<string,mixed>|Parameters> */
     protected array $convertedArrays = [];
@@ -26,8 +30,60 @@ class Parameters implements Arrayable, ArrayAccess {
         $this->params = $params;
     }
 
+    public function eachKey(Closure $callback): void {
+        foreach (array_keys($this->params) as $key) {
+            $callback($key);
+        }
+    }
+
+    public function exists(string $key): bool {
+        return Arr::exists($this->params, $key);
+    }
+
+    public function fetch(string $key, mixed ...$args): mixed {
+        if (Arr::has($this->params, $key)) {
+            $value = Arr::has($this->params, $key);
+        } elseif (count($args) > 0) {
+            $value = value($args[0]);
+        } else {
+            throw new ParameterMissingException($key);
+        }
+
+        return $this->convertValueToParameters($value);
+    }
+
+    public function has(string $key): bool {
+        return Arr::has($this->params, $key);
+    }
+
+    public function hasValue(mixed $value): bool {
+        return in_array($value, $this->params);
+    }
+
+    public function isEmpty(): bool {
+        return empty($this->params);
+    }
+
     public function isPermitted(): bool {
         return $this->permitted;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function jsonSerialize(): array {
+        return array_map(function ($value) {
+            return $value instanceof Parameters
+                ? $value->jsonSerialize()
+                : $value;
+        }, $this->params);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function keys(): array {
+        return array_keys($this->params);
     }
 
     public function offsetExists(mixed $offset): bool {
@@ -59,23 +115,39 @@ class Parameters implements Arrayable, ArrayAccess {
     }
 
     /**
-     * @param string|array<string,mixed> $filters
+     * @param mixed[] $array
+     * @return mixed[]
      */
-    public function permit(string|array $filters): static {
-        $filters = (array) $filters;
+    protected function flattenNonAssoc(array $array): array {
+        $ret = [];
+
+        foreach ($array as $value) {
+            if (is_array($value)) {
+                foreach ($value as $k => $v) {
+                    if (is_string($k)) {
+                        $ret[] = [$k => $v];
+                    } else {
+                        $ret[] = $v;
+                    }
+                }
+            } else {
+                $ret[] = $value;
+            }
+        }
+
+        return $ret;
+    }
+
+    public function permit(mixed ...$filterArgs): static {
         $ret = new static();
 
-        foreach ($filters as $key => $filter) {
-            if (!is_numeric($key)) {
-                $filter = [
-                    $key => $filter
-                ];
-            }
-
+        foreach ($this->flattenNonAssoc($filterArgs) as $key => $filter) {
             if (is_string($filter)) {
                 $this->permittedScalarFilter($ret, $filter);
             } elseif (is_array($filter) && Arr::isAssoc($filter)) {
                 $this->hashFilter($ret, $filter);
+            } else {
+                throw new RuntimeException('Bad filter type ' . gettype($filter));
             }
         }
 
@@ -132,6 +204,17 @@ class Parameters implements Arrayable, ArrayAccess {
         throw new UnfilteredParametersException();
     }
 
+    public function toJson(mixed $options = 0): string {
+        return json_encode($this->jsonSerialize(), $options);
+    }
+
+    /**
+     * @return mixed[]
+     */
+    public function values(): array {
+        return array_values($this->params);
+    }
+
     /**
      * @param array<string|int,mixed>|Parameters $object
      * @param Closure(Parameters):Parameters $callback
@@ -163,9 +246,10 @@ class Parameters implements Arrayable, ArrayAccess {
             && ((is_array($value) && Arr::isAssoc($value)) || $value instanceof Parameters);
     }
 
-    // @phpstan-assert-if-true string|int|float|bool|UploadedFile $value
+    // @phpstan-assert-if-true string|int|float|bool|UploadedFile|null $value
     protected static function isPermittedScalar(mixed $value): bool {
-        return is_string($value)
+        return $value === null
+            || is_string($value)
             || is_numeric($value)
             || is_bool($value)
             || ($value instanceof UploadedFile);

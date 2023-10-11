@@ -8,6 +8,23 @@ use SilvertipSoftware\LaravelSupport\Libs\StrongParameters\Parameters;
 
 class ParametersTest extends TestCase {
 
+    protected $params = null;
+
+    public function setUp(): void {
+        $this->params = new Parameters([
+            'person' => [
+                'age' => 32,
+                'name' => [
+                    'first' => 'John',
+                    'last' => 'Lennon'
+                ],
+                'addresses' => [
+                    ['city' => 'NYC', 'state' => 'New York']
+                ]
+            ]
+        ]);
+    }
+
     public function testAccessors() {
         $params = new Parameters([
             'name' => 'Bort',
@@ -139,7 +156,7 @@ class ParametersTest extends TestCase {
     public function testDoNotBreakParamsFilteringOnNullValues() {
         $params = new Parameters(['a' => 1, 'b' => [1, 2, 3], 'c' => null]);
 
-        $permitted = $params->permit(['a', 'c' => [], 'b' => []]);
+        $permitted = $params->permit('a', ['c' => []], ['b' => []]);
         $this->assertEquals(1, $permitted['a']);
         $this->assertEquals([1, 2, 3], $permitted['b']);
         $this->assertNull($permitted['c']);
@@ -210,6 +227,38 @@ class ParametersTest extends TestCase {
         $this->assertFalse($permitted->offsetExists('hacked'));
     }
 
+    public function testNestedArraysWithStrings() {
+        $params = new Parameters([
+            'book' => [
+                'genres' => ['Tragedy']
+            ]
+        ]);
+        $permitted = $params->permit(['book' => ['genres' => []]]);
+
+        $this->assertEquals(['Tragedy'], $permitted['book']['genres']);
+    }
+
+    public function testNestedArrayWithStringsThatShouldBeHashes() {
+        $params = new Parameters([
+            'book' => [
+                'genres' => ['Tragedy']
+            ]
+        ]);
+        $permitted = $params->permit(['book' => ['genres' => 'type']]);
+
+        $this->assertIsArray($permitted['book']['genres']);
+        $this->assertEmpty($permitted['book']['genres']);
+    }
+
+    public function testNestedStringThatShouldBeAHash() {
+        $params = new Parameters([
+            'book' => ['genre' => 'Tragedy']
+        ]);
+        $permitted = $params->permit(['book' => ['genre' => 'type']]);
+
+        $this->assertNull($permitted['book']['genre']);
+    }
+
     public function testPermitNestedParameters() {
         $params = new Parameters([
             'book' => [
@@ -238,7 +287,7 @@ class ParametersTest extends TestCase {
         $permitted = $params->permit([
             'book' => [
                 'title',
-                'authors' => [['name']],
+                'authors' => ['name'],
                 'details' => ['pages'],
                 'id'
             ]
@@ -270,7 +319,7 @@ class ParametersTest extends TestCase {
 
         $permitted = $params->permit([
             'book' => [
-                'authors_attributes' => [['name']]
+                'authors_attributes' => ['name']
             ]
         ]);
 
@@ -295,7 +344,7 @@ class ParametersTest extends TestCase {
 
         $permitted = $params->permit([
             'book' => [
-                'authors_attributes' => [['name']]
+                'authors_attributes' => ['name']
             ]
         ]);
 
@@ -329,7 +378,7 @@ class ParametersTest extends TestCase {
 
         $permitted = $params->permit([
             'book' => [
-                'authors_attributes' => [['name']]
+                'authors_attributes' => ['name']
             ]
         ]);
 
@@ -343,5 +392,76 @@ class ParametersTest extends TestCase {
 
     public function testNestedParamsWithTargettedNumericKeys() {
         $this->markTestSkipped('PHP cannot really do this since arrays and hashes are the same thing.');
+    }
+
+    public function testFetchRaisesException() {
+        $this->expectException(ParameterMissingException::class);
+
+        $this->params->fetch('foo');
+    }
+
+    public function testFetchWithDefaultValueDoesNotMutateParams() {
+        $params = new Parameters([]);
+        $params->fetch('foo', []);
+
+        $this->assertNull($params['foo']);
+    }
+
+    public function testFetchDoesntRaiseExceptionWithDefault() {
+        $this->assertEquals('monkey', $this->params->fetch('foo', 'monkey'));
+        $this->assertEquals('monkey', $this->params->fetch('foo', fn() => 'monkey'));
+    }
+
+    public function testFetchDoesntRaiseExceptionWithNullAsDefault() {
+        $this->assertNull($this->params->fetch('foo', null));
+    }
+
+    public function testFetchRaisesExceptionEvenInBlock() {
+        $this->expectException(ParameterMissingException::class);
+
+        $this->params->fetch('foo', fn () => $this->params->fetch('also_missing'));
+    }
+
+    public function testScalarsAreFilteredWhenArrayIsSpecified() {
+        $params = new Parameters(['foo' => 'bar']);
+
+        $this->assertArrayHasKey('foo', $params->permit('foo'));
+        $this->assertEquals('bar', $params['foo']);
+        $this->assertArrayNotHasKey('foo', $params->permit(['foo' => []]));
+        $this->assertArrayNotHasKey('foo', $params->permit(['foo' => ['bar']]));
+        $this->assertArrayNotHasKey('foo', $params->permit(['foo' => 'bar']));
+    }
+
+    public function testQueries() {
+        $params = new Parameters([
+            'book' => [
+                'title' => "Romeo and Juliet",
+                'authors' => [
+                    [
+                        'name' => "William Shakespeare",
+                        'born' => "1564-04-26"
+                    ]
+                ],
+                'details' => [
+                    'pages' => 200,
+                ]
+            ]
+        ]);
+
+        $permitted = $params->permit([
+            'book' => [
+                'title',
+                'authors' => ['name'],
+                'details' => ['pages']
+            ]
+        ])['book'];
+
+        $this->assertTrue($permitted->exists('title'));
+        $this->assertFalse($permitted->exists('details.pages'));
+        $this->assertTrue($permitted->has('title'));
+        $this->assertTrue($permitted->has('details.pages'));
+        $this->assertTrue($permitted->hasValue('Romeo and Juliet'));
+        $this->assertEquals(['title', 'authors', 'details'], $permitted->keys());
+        $this->assertEquals('Romeo and Juliet', $permitted->values()[0]);
     }
 }
