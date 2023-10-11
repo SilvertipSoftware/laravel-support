@@ -50,7 +50,7 @@ trait AutoResponds {
 
         $response = null;
 
-        $methodName = 'create' . ucfirst($this->desiredResponseFormat()) . 'Response';
+        $methodName = 'create' . Str::studly($this->desiredResponseFormat()) . 'Response';
         if (method_exists($this, $methodName)) {
             $response = $this->{$methodName}();
         }
@@ -70,7 +70,7 @@ trait AutoResponds {
     }
 
     protected function mapRedirectResponse(RequestObject $request, RedirectResponse $response): mixed {
-        $methodName = 'mapRedirectFor' . ucfirst($this->desiredResponseFormat());
+        $methodName = 'mapRedirectFor' . Str::studly($this->desiredResponseFormat());
 
         if (method_exists($this, $methodName)) {
             $response = $this->{$methodName}($response);
@@ -98,7 +98,7 @@ trait AutoResponds {
         $controllerName = str_replace($this->controllerRootNamespace() . '\\', '', $controllerClass);
         $leafParts = $format == 'html'
             ? [$actionMethod]
-            : [$format, $actionMethod];
+            : [$actionMethod, $format];
 
         $segmentNames = array_map(function ($part) {
             $fragment = str_replace('Controller', '', $part);

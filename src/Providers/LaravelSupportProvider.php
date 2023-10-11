@@ -10,9 +10,10 @@ use SilvertipSoftware\LaravelSupport\Http\Middleware\DetectDesiredResponseFormat
 use SilvertipSoftware\LaravelSupport\Http\Middleware\SealInFreshness;
 use SilvertipSoftware\LaravelSupport\Http\Mixins\RequestAcceptsHelpers;
 use SilvertipSoftware\LaravelSupport\Http\Mixins\RequestFreshnessHelpers;
-use SilvertipSoftware\LaravelSupport\Routing\ResourceRegistrar;
 use SilvertipSoftware\LaravelSupport\Routing\RedirectHelpers;
+use SilvertipSoftware\LaravelSupport\Routing\ResourceRegistrar;
 use SilvertipSoftware\LaravelSupport\Routing\UrlHelpers;
+use SilvertipSoftware\LaravelSupport\View\FormatAwareViewFinder;
 
 class LaravelSupportProvider extends ServiceProvider {
 
@@ -21,6 +22,10 @@ class LaravelSupportProvider extends ServiceProvider {
         RequestFreshnessHelpers::register();
         UrlHelpers::register();
         RedirectHelpers::register();
+
+        FormatAwareViewFinder::register($this->app);
+        View::addExtension('js.php', 'blade');
+        View::addExtension('turbo_stream.php', 'blade');
 
         $this->app->singleton('Illuminate\Routing\ResourceRegistrar', function ($app) {
             return new ResourceRegistrar($app['router']);

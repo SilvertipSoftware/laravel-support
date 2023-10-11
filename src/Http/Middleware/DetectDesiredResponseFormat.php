@@ -25,7 +25,7 @@ class DetectDesiredResponseFormat {
             $format = 'js';
         // @phpstan-ignore-next-line
         } elseif ($request->wantsTurboStream()) {
-            $format = 'stream';
+            $format = 'turbo_stream';
         } else {
             $path = $request->decodedPath();
             if (preg_match('/\.[a-z]+$/', $path, $matches)) {

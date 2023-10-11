@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\View;
 
 trait WithStream {
 
-    protected function createStreamResponse(int $status = 200): Response {
+    protected function createTurboStreamResponse(int $status = 200): Response {
         $streamView = $this->viewNameForRoute();
         $data = $this->dataForView();
 
         if (View::exists($streamView)) {
-            return $this->makeStreamResponseFrom(
+            return $this->makeTurboStreamResponseFrom(
                 response(view($streamView, $data)->render(), $status)
             );
         } else {
@@ -24,12 +24,12 @@ trait WithStream {
         }
     }
 
-    protected function makeStreamResponseFrom(Response $response): Response {
+    protected function makeTurboStreamResponseFrom(Response $response): Response {
         return $response
             ->header('Content-Type', 'text/vnd.turbo-stream.html');
     }
 
-    protected function mapRedirectForStream(Response $response): Response {
+    protected function mapRedirectForTurboStream(Response $response): Response {
         return $this->makeHtmlResponseFrom($response);
     }
 }
