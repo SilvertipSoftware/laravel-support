@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace SilvertipSoftware\LaravelSupport\Eloquent\Validation;
 
-use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ImplicitRule;
 use Illuminate\Support\Str;
 use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
 use SilvertipSoftware\LaravelSupport\Eloquent\Model;
 
-class MethodCallingRule implements Rule {
+class MethodCallingRule implements ImplicitRule {
+
+    protected string $method;
 
     /**
      * @param array<int, bool|float|int|string> $params
