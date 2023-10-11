@@ -21,7 +21,7 @@ final class FormatAwareViewFinder extends FileViewFinder {
         });
     }
 
-    public function addExtension(string $extension): void {
+    public function addExtension($extension): void {
         $knownFormatExtensions = array_map(fn ($format) => $format . '.php', $this->knownFormats);
 
         if (!in_array($extension, $knownFormatExtensions)) {
