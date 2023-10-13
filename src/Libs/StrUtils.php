@@ -23,8 +23,8 @@ class StrUtils {
         $locale = Arr::get($opts, 'locale', null);
 
         foreach ($possibleKeys as $key) {
-            if (Lang::has($key, $locale)) {
-                if ($count) {
+            if (Lang::has($key, $locale) && !is_array(Lang::get($key, locale: $locale))) {
+                if ($count !== false) {
                     return Lang::choice($key, $count, $opts, $locale);
                 }
 
