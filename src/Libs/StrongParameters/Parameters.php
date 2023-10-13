@@ -42,7 +42,7 @@ class Parameters implements Arrayable, ArrayAccess, Jsonable, JsonSerializable {
 
     public function fetch(string $key, mixed ...$args): mixed {
         if (Arr::has($this->params, $key)) {
-            $value = Arr::has($this->params, $key);
+            $value = Arr::get($this->params, $key);
         } elseif (count($args) > 0) {
             $value = value($args[0]);
         } else {
