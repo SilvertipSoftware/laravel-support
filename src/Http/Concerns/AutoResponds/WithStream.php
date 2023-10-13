@@ -2,6 +2,7 @@
 
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns\AutoResponds;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\View;
 
@@ -29,7 +30,7 @@ trait WithStream {
             ->header('Content-Type', 'text/vnd.turbo-stream.html');
     }
 
-    protected function mapRedirectForTurboStream(Response $response): Response {
+    protected function mapRedirectForTurboStream(RedirectResponse $response): Response|RedirectResponse {
         return $this->makeHtmlResponseFrom($response);
     }
 }
