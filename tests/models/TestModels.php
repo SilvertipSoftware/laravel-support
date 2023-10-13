@@ -5,6 +5,34 @@ namespace App\Models;
 use Illuminate\Support\Arr;
 use SilvertipSoftware\LaravelSupport\Eloquent\FluentModel;
 use SilvertipSoftware\LaravelSupport\Eloquent\Model;
+use SilvertipSoftware\LaravelSupport\Libs\EnumSupport;
+
+enum AccountStatus: int {
+    use EnumSupport;
+
+    case Trial = 0;
+    case Paid = 1;
+    case Cancelled = 2;
+    case FreeForLife = 3;
+
+    public function lastBillAmount(): float {
+        return ([
+            0 => 30,
+            1 => 100,
+            2 => 90,
+            3 => 0
+        ])[$this->value];
+    }
+}
+
+enum Suit {
+    use EnumSupport;
+
+    case Spades;
+    case Diamonds;
+    case Clubs;
+    case Hearts;
+}
 
 class Account extends Model {
 
