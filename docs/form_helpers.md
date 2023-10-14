@@ -99,9 +99,9 @@ values such as arrays, which will also be accessible in `request()` input. You c
 Checkboxes are form controls that give the user a set of options they can enable or disable:
 
 ```php
-@checkBox($form, 'pet_dog') %>
+@checkBox($form, 'pet_dog')
 @label($form, 'pet_dog', 'I own a dog')
-@checkBox($form, 'pet_cat') %>
+@checkBox($form, 'pet_cat')
 @label($form, 'pet_cat', 'I own a cat')
 ```
 

@@ -1,5 +1,18 @@
 # Controller Improvements
 
+## Controller Naming Convention
+
+The naming convention of controllers favors pluralization of the last
+word in the controller's name, although it is not strictly required
+(e.g. `ApplicationController`). For example, `ClientsController` is
+preferable to `ClientController`, `SiteAdminsController` is
+preferable to `SiteAdminController` or `SitesAdminsController`, and
+so on.
+
+NOTE: The controller naming convention differs from the naming
+convention of models, which are expected to be named in singular
+form.
+
 ## Parameters
 
 ### Strong Parameters
