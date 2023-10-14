@@ -49,7 +49,9 @@ class Parameters implements Arrayable, ArrayAccess, Jsonable, JsonSerializable {
             throw new ParameterMissingException($key);
         }
 
-        return $this->convertValueToParameters($value);
+        return $value === []
+            ? new static([])
+            : $this->convertValueToParameters($value);
     }
 
     public function has(string $key): bool {
