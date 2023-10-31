@@ -1772,6 +1772,29 @@ class FormOptionsHelperTest extends TestCase {
         );
     }
 
+    public function testCollectionSelectWithErrors() {
+        $post = new Post();
+        $post->errors->add('author_name', 'can\'t be empty');
+
+        $expected = '<div class="field_with_errors">'
+            . '<select name="post[author_name]" id="post_author_name">'
+            . '<option value="a">a</option>' . "\n" . '<option value="b">b</option>'
+            . '</select>'
+            . '</div>';
+
+        $this->assertDomEquals(
+            $expected,
+            static::collectionSelect(
+                'post',
+                'author_name',
+                ['a', 'b'],
+                fn ($s) => $s,
+                fn ($s) => $s,
+                ['object' => $post]
+            )
+        );
+    }
+
     public function testTimeZoneSelect() {
         $post = new Post(['time_zone' => 'D']);
 
@@ -1983,7 +2006,7 @@ class FormOptionsHelperTest extends TestCase {
     }
 
     public function testTimeZoneSelectWithPriorityZonesAndErrors() {
-        $this->markTestSkipped('Errors not working yet');
+//        $this->markTestSkipped('Errors not working yet');
         $post = new Post(['time_zone' => 'D']);
         $post->errors = new MessageBag();
         $post->errors->merge(['time_zone' => 'invalid']);
@@ -2388,6 +2411,60 @@ class FormOptionsHelperTest extends TestCase {
             . '</select>';
 
         $this->assertDomEquals($expected, $rendered);
+    }
+
+    public function testCollectionCheckBoxesWithErrors() {
+        $post = new Post();
+        $post->errors->add('category', 'must be selected');
+
+        $expected = '<input type="hidden" name="post[category][]" value="" autocomplete="off" />'
+            . '<div class="field_with_errors">'
+            . '<input type="checkbox" value="ruby" name="post[category][]" id="post_category_ruby" />'
+            . '</div>'
+            . '<label for="post_category_ruby">ruby</label>'
+            . '<div class="field_with_errors">'
+            . '<input type="checkbox" value="java" name="post[category][]" id="post_category_java" />'
+            . '</div>'
+            . '<label for="post_category_java">java</label>';
+
+        $this->assertDomEquals(
+            $expected,
+            static::collectionCheckBoxes(
+                'post',
+                'category',
+                ['ruby', 'java'],
+                fn ($s) => $s,
+                fn ($s) => $s,
+                ['object' => $post]
+            )
+        );
+    }
+
+    public function testCollectionRadioButtonsWithErrors() {
+        $post = new Post();
+        $post->errors->add('category', 'must be selected');
+
+        $expected = '<input type="hidden" name="post[category]" value="" autocomplete="off" />'
+            . '<div class="field_with_errors">'
+            . '<input type="radio" value="ruby" name="post[category]" id="post_category_ruby" />'
+            . '</div>'
+            . '<label for="post_category_ruby">ruby</label>'
+            . '<div class="field_with_errors">'
+            . '<input type="radio" value="java" name="post[category]" id="post_category_java" />'
+            . '</div>'
+            . '<label for="post_category_java">java</label>';
+
+        $this->assertDomEquals(
+            $expected,
+            static::collectionRadioButtons(
+                'post',
+                'category',
+                ['ruby', 'java'],
+                fn ($s) => $s,
+                fn ($s) => $s,
+                ['object' => $post]
+            )
+        );
     }
 
     private function dummyPosts() {

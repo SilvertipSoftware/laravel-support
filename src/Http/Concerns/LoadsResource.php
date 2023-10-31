@@ -2,17 +2,20 @@
 
 namespace SilvertipSoftware\LaravelSupport\Http\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use SilvertipSoftware\LaravelSupport\Eloquent\ModelContract;
 
 trait LoadsResource {
 
     /** @var array<string,array<string>> */
     protected array|bool $loadResource = [];
     protected ?string $parentName = null;
-    protected ?Model $parentModel = null;
+    protected EloquentModel|ModelContract|null $parentModel = null;
 
     public function initializeLoadsResource(): void {
         if ($this->loadResource === false) {
@@ -27,6 +30,22 @@ trait LoadsResource {
         foreach ($modifiers as $key => $actions) {
             $middleware->{$key}($actions);
         }
+    }
+
+    protected function authorizeIfRequired(
+        string $action,
+        string|EloquentModel|ModelContract $modelClass,
+        EloquentModel|ModelContract|null $parentModel = null
+    ): void {
+        if (!in_array(AuthorizesRequests::class, class_uses_recursive($this))) {
+            return;
+        }
+
+        // @phpstan-ignore-next-line
+        $ability = $this->normalizeGuessedAbilityName($action);
+
+        // @phpstan-ignore-next-line
+        $this->authorize($ability, $parentModel ? [$modelClass, $parentModel] : $modelClass);
     }
 
     protected function createCollectionQuery(string $name, string $class, bool $hasParent): void {
@@ -45,6 +64,10 @@ trait LoadsResource {
         $this->{$name . '_query'} = $query;
     }
 
+    protected function defaultResource(string $name, ?string $class = null): EloquentModel|ModelContract {
+        throw (new ModelNotFoundException)->setModel($class);
+    }
+
     protected function loadResourceForRoute(?string $modelName = null, bool $single = false): void {
         $currentRoute = Route::getCurrentRoute();
         $action = $currentRoute->getActionMethod();
@@ -55,6 +78,7 @@ trait LoadsResource {
 
         if ($single) {
             $this->loadResource($modelName, $modelClass);
+            $this->authorizeIfRequired($action, $this->{$modelName}, null);
         } else {
             $parameterNames = $currentRoute->parameterNames();
             $lastParameter = end($parameterNames);
@@ -65,9 +89,10 @@ trait LoadsResource {
                     $parentClassName = $this->modelRootNamespace . '\\' . Str::studly($parentClassName);
                 }
 
-                $this->parentModel = $this->loadResource($this->parentName, $parentClassName);
+                $this->parentModel = $this->loadResource($this->parentName, $parentClassName, false);
             }
 
+            $this->authorizeIfRequired($action, $modelClass, $this->parentModel);
             $this->createCollectionQuery($modelName, $modelClass, !!$this->parentModel);
 
             if ($action != 'index') {
@@ -83,9 +108,17 @@ trait LoadsResource {
         }
     }
 
-    protected function loadResource(string $name, ?string $class = null): Model {
+    protected function loadResource(
+        string $name,
+        ?string $class = null,
+        bool $isSubjectModel = true
+    ): EloquentModel|ModelContract {
         $class = $class ?: $this->getSubjectResourceClass();
-        $this->{$name} = $class::findOrFail(request($this->routeParameterNameFor($name)));
+        $id = request($this->routeParameterNameFor($name));
+
+        $this->{$name} = ($isSubjectModel && $id === null)
+            ? $this->defaultResource($name, $class)
+            : $class::findOrFail($id);
 
         return $this->{$name};
     }

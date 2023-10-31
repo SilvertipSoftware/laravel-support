@@ -21,7 +21,8 @@ trait WithHtml {
 
         $data = $this->dataForView();
 
-        return response()->view($viewName, $data);
+        return response()->view($viewName, $data)
+            ->header('Content-Type', 'text/html');
     }
 
     protected function makeHtmlResponseFrom(Response|RedirectResponse $response): Response|RedirectResponse {

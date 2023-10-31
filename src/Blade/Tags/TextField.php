@@ -21,7 +21,7 @@ class TextField extends Base {
 
         $this->addDefaultNameAndId($options);
 
-        return static::tag('input', $options);
+        return $this->instanceTag('input', $options);
     }
 
     protected function fieldType(): string {

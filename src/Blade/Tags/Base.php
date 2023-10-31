@@ -7,15 +7,17 @@ namespace SilvertipSoftware\LaravelSupport\Blade\Tags;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use RuntimeException;
-use Stringable;
 use SilvertipSoftware\LaravelSupport\Blade\FormOptionsHelper;
 use SilvertipSoftware\LaravelSupport\Blade\FormTagHelper;
+use SilvertipSoftware\LaravelSupport\Blade\ModelInstanceTagHelper;
 use SilvertipSoftware\LaravelSupport\Blade\TagHelper;
+use Stringable;
 
 class Base {
     use TagHelper,
         FormTagHelper,
-        FormOptionsHelper;
+        FormOptionsHelper,
+        ModelInstanceTagHelper;
 
     public ?object $object;
 
@@ -204,11 +206,11 @@ class Base {
         }
 
         $value = Arr::get($options, 'selected', $this->value());
-        $selTag = static::contentTag('select', $this->addOptions($optionTags, $options, $value), $htmlOptions);
+        $selTag = $this->instanceContentTag('select', $this->addOptions($optionTags, $options, $value), $htmlOptions);
 
         $hiddenTag = new HtmlString('');
         if (Arr::get($htmlOptions, 'multiple') && Arr::get($options, 'include_hidden', true)) {
-            $hiddenTag = static::tag(
+            $hiddenTag = $this->instanceTag(
                 'input',
                 [
                     'disabled' => Arr::get($htmlOptions, 'disabled'),

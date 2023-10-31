@@ -33,7 +33,7 @@ class RadioButton extends Base {
 
         $this->addDefaultNameAndIdForValue($this->tagValue, $options);
 
-        return static::tag('input', $options);
+        return $this->instanceTag('input', $options);
     }
 
     protected function isChecked(mixed $value): bool {

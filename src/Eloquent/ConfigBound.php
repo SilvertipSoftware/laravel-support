@@ -9,6 +9,10 @@ trait ConfigBound {
 
     protected static $cachedInstances = null;
 
+    public static function clearLoadedModels() {
+        static::$cachedInstances = null;
+    }
+
     public static function find($key) {
         return Arr::get(static::allInstances(), $key);
     }

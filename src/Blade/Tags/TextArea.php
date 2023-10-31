@@ -21,6 +21,6 @@ class TextArea extends Base {
 
         $value = Arr::pull($options, 'value', $this->valueBeforeTypeCast());
 
-        return static::contentTag('textarea', $value, $options);
+        return $this->instanceContentTag('textarea', $value, $options);
     }
 }

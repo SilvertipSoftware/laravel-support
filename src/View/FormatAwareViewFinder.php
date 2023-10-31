@@ -39,7 +39,7 @@ final class FormatAwareViewFinder extends FileViewFinder {
         }
 
         $extensions = !empty($format)
-            ? array_merge([$format . '.php'], $this->extensions)
+            ? [$format . '.php']
             : $this->extensions;
 
         return array_map(fn ($extension) => str_replace('.', '/', $name).'.'.$extension, $extensions);

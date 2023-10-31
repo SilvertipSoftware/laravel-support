@@ -8,7 +8,7 @@ use Illuminate\Support\Fluent;
 use Illuminate\Support\Str;
 use SilvertipSoftware\LaravelSupport\Libs\StrongParameters\Parameters;
 
-class FluentModel extends Fluent {
+class FluentModel extends Fluent implements ModelContract {
     use HasEvents,
         Naming,
         Translation,
@@ -18,11 +18,25 @@ class FluentModel extends Fluent {
      * @param array<string,mixed>|Arrayable $attributes
      */
     public function __construct(array|Arrayable $attributes = []) {
+        parent::__construct([]);
+
+        $this->initializeValidation();
+        $this->fill($attributes);
+    }
+
+    /**
+     * @param array<string,mixed>|Arrayable $attributes
+     */
+    public function fill(array|Arrayable $attributes): static {
         $attributes = $attributes instanceof Arrayable
             ? $attributes->toArray()
             : $attributes;
 
-        parent::__construct($attributes);
+        foreach ($attributes as $key => $value) {
+            $this[$key] = $value;
+        }
+
+        return $this;
     }
 
     public function get(mixed $key, mixed $default = null): mixed {

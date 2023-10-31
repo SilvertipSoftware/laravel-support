@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 trait AutoResponds {
@@ -25,7 +26,12 @@ trait AutoResponds {
         $request = request();
         $request->controller = View::share('controller', $this);
 
-        $response = call_user_func_array([$this, $method], array_values($parameters));
+        try {
+            $response = call_user_func_array([$this, $method], array_values($parameters));
+        } catch (ValidationException $vex) {
+            $response = $this->createResponse($request)
+                ->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         if ($response instanceof RedirectResponse) {
             $response = $this->mapRedirectResponse($request, $response);

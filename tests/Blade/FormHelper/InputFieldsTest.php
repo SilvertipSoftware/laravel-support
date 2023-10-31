@@ -9,6 +9,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Stringable;
 use Orchestra\Testbench\TestCase;
 use SilvertipSoftware\LaravelSupport\Blade\FormHelper;
+use SilvertipSoftware\LaravelSupport\Blade\Tags\Base;
 use Tests\TestSupport\HtmlAssertions;
 
 class InputFieldsTest extends TestCase {
@@ -245,6 +246,14 @@ class InputFieldsTest extends TestCase {
         );
     }
 
+    public function testTextFieldWithErrors() {
+        $expected = '<div class="field_with_errors">'
+            . '<input id="post_author_name" name="post[author_name]" type="text" value="" />'
+            . '</div>';
+
+        $this->assertDomEquals($expected, static::textField('post', 'author_name', ['object' => $this->badPost]));
+    }
+
     public function testCheckBoxIsHtmlString() {
         $this->assertInstanceOf(HtmlString::class, static::checkBox('post', 'secret'));
     }
@@ -473,6 +482,15 @@ class InputFieldsTest extends TestCase {
             $expected,
             static::checkBox('post', 'secret', ['form' => 'new_form', 'object' => $this->post])
         );
+    }
+
+    public function testCheckBoxWithErrors() {
+        $expected = '<input name="post[published]" type="hidden" value="0" autocomplete="off" />'
+            . '<div class="field_with_errors">'
+            . '<input type="checkbox" value="1" name="post[published]" id="post_published" />'
+            . '</div>';
+
+        $this->assertDomEquals($expected, static::checkBox('post', 'published', ['object' => $this->badPost]));
     }
 
     public function testColorFieldWithValidHexString() {
@@ -752,6 +770,12 @@ class InputFieldsTest extends TestCase {
         );
     }
 
+    public function testHidenFieldDoesNotRenderErrors() {
+        $expected = '<input id="post_author_name" name="post[author_name]" type="hidden" value="" autocomplete="off"/>';
+
+        $this->assertDomEquals($expected, static::hiddenField('post', 'author_name', ['object' => $this->badPost]));
+    }
+
     public function testMonthField() {
         $expected = '<input id="post_written_on" name="post[written_on]" type="month" value="2004-06" />';
         $this->assertDomEquals($expected, static::monthField('post', 'written_on', ['object' => $this->post]));
@@ -846,6 +870,17 @@ class InputFieldsTest extends TestCase {
         $this->assertDomEquals(
             '<input id="post_secret_false" name="post[secret]" type="radio" value="false" />',
             static::radioButton('post', 'secret', false, ['object' => $this->post])
+        );
+    }
+
+    public function testRadioButtonWithErrors() {
+        $expected = '<div class="field_with_errors">'
+            . '<input type="radio" value="rails" checked="checked" name="post[category]" id="post_category_rails" />'
+            . '</div>';
+
+        $this->assertDomEquals(
+            $expected,
+            static::radioButton('post', 'category', 'rails', ['object' => $this->badPost, 'checked' => true])
         );
     }
 
@@ -1048,6 +1083,15 @@ class InputFieldsTest extends TestCase {
         );
     }
 
+    public function testTextAreaWithErrors() {
+        $expected = '<div class="field_with_errors">'
+            . '<textarea id="post_body" name="post[body]">'
+            . "\n" . 'This is a post</textarea>'
+            . '</div>';
+
+        $this->assertDomEquals($expected, static::textArea('post', 'body', ['object' => $this->badPost]));
+    }
+
     public function testTimeField() {
         $expected = '<input id="post_written_on" name="post[written_on]" type="time" value="00:00:00" />';
         $this->assertDomEquals($expected, static::timeField('post', 'written_on', ['object' => $this->post]));
@@ -1220,5 +1264,30 @@ class InputFieldsTest extends TestCase {
             '<input type="radio" name="post[secret]" value="0" />',
             static::radioButton('post', 'secret', '0', ['id' => null, 'object' => $this->post])
         );
+    }
+
+    public function testCustomErrorWrapper() {
+        Base::$fieldErrorProc = function ($htmlTag, $instance) {
+            return new HtmlString(
+                '<div class="field_with_errors">'
+                . $htmlTag
+                . '<span class="error">' . implode(',', $instance->errorMessages()) . '</span>'
+                . '</div>'
+            );
+        };
+
+        $expected = '<div class="field_with_errors">'
+            . '<input id="post_author_name" name="post[author_name]" type="text" value="" />'
+            . '<span class="error">can\'t be empty</span>'
+            . '</div>';
+
+        $rendered = null;
+        try {
+            $rendered = static::textField('post', 'author_name', ['object' => $this->badPost]);
+        } finally {
+            Base::$fieldErrorProc = null;
+        }
+
+        $this->assertDomEquals($expected, $rendered);
     }
 }

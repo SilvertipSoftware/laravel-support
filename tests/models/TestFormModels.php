@@ -46,10 +46,6 @@ class Post extends Model {
 
     private $privateProperty = 'PRIVATE';
 
-    // public function toParam(): int|string {
-    //     return $this->id;
-    // }
-
     public function setAuthorAttributes($attrs) {
     }
 

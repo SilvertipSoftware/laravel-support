@@ -5,7 +5,7 @@ namespace SilvertipSoftware\LaravelSupport\Eloquent;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-class Model extends EloquentModel {
+class Model extends EloquentModel implements ModelContract {
     use AutosavesRelations,
         Naming,
         NestedAttributes,

@@ -486,7 +486,7 @@ trait FormHelper {
 
     protected static function objectExists(?object $object): bool {
         return is_object($object) && (property_exists($object, 'exists') || method_exists($object, '__get'))
-            ? $object->exists
+            ? (bool) $object->exists
             : false;
     }
 

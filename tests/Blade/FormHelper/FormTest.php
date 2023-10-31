@@ -251,6 +251,12 @@ class FormTest extends TestCase {
         );
     }
 
+    public function testLabelWithErrors() {
+        $expected = '<div class="field_with_errors"><label for="post_body">Body</label></div>';
+
+        $this->assertDomEquals($expected, static::label('post', 'body', ['object' => $this->badPost]));
+    }
+
     public function testFieldsFor() {
         $rendered = static::fieldsFor('post', $this->post, [], function ($f) {
             return $f->textField('title')

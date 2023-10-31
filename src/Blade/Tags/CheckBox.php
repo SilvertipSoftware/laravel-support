@@ -41,7 +41,7 @@ class CheckBox extends Base {
         }
 
         $includeHidden = Arr::pull($options, 'include_hidden', true);
-        $checkbox = static::tag('input', $options);
+        $checkbox = $this->instanceTag('input', $options);
 
         if ($includeHidden) {
             $hidden = $this->hiddenFieldForCheckbox($options);
@@ -60,7 +60,8 @@ class CheckBox extends Base {
                 Arr::only($options, ['name', 'disabled', 'form']),
                 ['type' => 'hidden', 'value' => $this->uncheckedValue, 'autocomplete' => 'off']
             );
-            return static::tag('input', $opts);
+
+            return $this->instanceTag('input', $opts);
         }
 
         return new HtmlString();

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use SilvertipSoftware\LaravelSupport\Eloquent\ModelContract;
 
 class RestRouter {
 
@@ -25,7 +26,7 @@ class RestRouter {
     }
 
     /**
-     * @param array<Model|string> $models
+     * @param array<Model|ModelContract|string> $models
      * @param array<string,mixed> $options
      */
     public static function polymorphicRoute(array $models, array $options = [], bool $absolute = true): string {
@@ -91,13 +92,13 @@ class RestRouter {
      * @param array<string,mixed> $options
      */
     protected static function processLastFragment(
-        Model|string $model,
+        Model|ModelContract|string $model,
         array &$prefixes,
         array &$params,
         bool &$isCollection,
         array $options
     ): void {
-        if ($model instanceof Model) {
+        if ($model instanceof Model || $model instanceof ModelContract) {
             $class = get_class($model);
             $isCollection = !$model->exists;
             if (!$isCollection) {
@@ -122,7 +123,7 @@ class RestRouter {
      * @param array<string,mixed> $options
      */
     protected static function processIntermediateFragment(
-        Model|string $model,
+        Model|ModelContract|string $model,
         array &$prefixes,
         array &$params,
         array $options

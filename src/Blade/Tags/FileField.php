@@ -32,6 +32,6 @@ class FileField extends TextField {
             'autocomplete' => 'off'
         ];
 
-        return static::tag('input', $opts);
+        return $this->instanceTag('input', $opts);
     }
 }

@@ -72,7 +72,7 @@ class Label extends Base {
             $content = $this->renderComponent($builder);
         }
 
-        return static::labelTag($nameAndId['id'], $content, $options);
+        return $this->instanceLabelTag($nameAndId['id'], $content, $options);
     }
 
     private function makeLabelBuilder(mixed $tagValue): object {

@@ -87,11 +87,19 @@ trait FormHelperFixtures {
             'written_on' => '2004-06-15'
         ]);
         $this->post->exists = true;
+
+        $this->badPost = new Post($this->post->getAttributes());
+        $this->badPost->exists = true;
+        $this->badPost->errors->add('body', 'foo');
+        $this->badPost->errors->add('author_name', 'can\'t be empty');
+        $this->badPost->errors->add('written_on', 'must be written recently');
+        $this->badPost->errors->add('published', 'must be accepted');
+        $this->badPost->errors->add('category', 'must be PHP');
+
         $this->postDelegator = new PostDelegator(['title' => 'Hello World']);
 
         $this->comment = new Comment();
         $this->post->comments = collect([$this->comment]);
-
         $this->post->tags = collect([new Tag()]);
 
         $this->car = new Car(['color' => '#000FFF']);
