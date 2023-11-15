@@ -19,12 +19,15 @@ trait AutoResponds {
         AutoResponds\WithJson,
         AutoResponds\WithStream;
 
+    public ?string $action = null;
+
     /**
      * @param array<string,mixed> $parameters
      */
     public function callAction(mixed $method, mixed $parameters): mixed {
         $request = request();
         $request->controller = View::share('controller', $this);
+        $this->action = $method;
 
         try {
             $response = call_user_func_array([$this, $method], array_values($parameters));
