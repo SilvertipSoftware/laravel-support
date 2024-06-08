@@ -22,7 +22,7 @@ jobs:
 
       - name: PHP Lint
         run: |
-          composer run lint-php
+          composer run lint
 
       - name: Check code style
         run: |
