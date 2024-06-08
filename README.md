@@ -5,7 +5,7 @@ when updating laravel version:
  - MethodCallingRule comes back
  - HasTraits booting/initialize of traits
  - getForeignKey -> getForeignKeyName for BelongsTo
-- WithJson can use Resources
+ - WithJson can use Resources
 
 
 # Laravel Support Package
