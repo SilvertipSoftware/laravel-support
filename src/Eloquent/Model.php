@@ -20,7 +20,7 @@ class Model extends EloquentModel implements ModelContract {
     protected $guarded = [];
 
     /**
-     * @param array<string,mixed>|Arrayable $attributes
+     * @param array<string, mixed>|Arrayable<string, mixed> $attributes
      */
     public function __construct(array|Arrayable $attributes = []) {
         $attributes = $attributes instanceof Arrayable

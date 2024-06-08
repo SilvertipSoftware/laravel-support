@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Fluent;
 use Illuminate\Support\Str;
 
+/**
+ * @extends Fluent<string, mixed>
+ */
 class Name extends Fluent {
 
     public static string|Closure $rootModelNamespace = 'App\\Models';

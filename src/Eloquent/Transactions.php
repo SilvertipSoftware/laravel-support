@@ -12,7 +12,7 @@ use Illuminate\Support\Arr;
 trait Transactions {
 
     /**
-     * @param array<string, mixed>|Arrayable $attributes
+     * @param array<string, mixed>|Arrayable<string, mixed> $attributes
      */
     public static function createOrFail(array|Arrayable $attributes = []): static {
         $attrs = $attributes instanceof Arrayable
@@ -62,7 +62,7 @@ trait Transactions {
     }
 
     /**
-     * @param array<string, mixed>|Arrayable $attributes
+     * @param array<string, mixed>|Arrayable<string, mixed> $attributes
      * @param array<string, mixed> $options
      */
     public function update(array|Arrayable $attributes = [], array $options = []) {
@@ -77,7 +77,7 @@ trait Transactions {
     }
 
     /**
-     * @param array<string, mixed>|Arrayable $attributes
+     * @param array<string, mixed>|Arrayable<string, mixed> $attributes
      * @param array<string, mixed> $options
      */
     public function updateOrFail(array|Arrayable $attributes = [], array $options = []) {

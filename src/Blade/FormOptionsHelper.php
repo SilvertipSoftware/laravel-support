@@ -22,7 +22,7 @@ trait FormOptionsHelper {
     use TagHelper;
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -58,7 +58,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -94,7 +94,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -120,7 +120,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -152,7 +152,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection $groupedOptions
+     * @param array<mixed>|Collection<array-key, mixed> $groupedOptions
      * @param OptionHash $options
      */
     public static function groupedOptionsForSelect(
@@ -191,7 +191,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param string|array<mixed>|Collection $container
+     * @param string|array<mixed>|Collection<array-key, mixed> $container
      */
     public static function optionsForSelect(
         string|array|Collection|null $container,
@@ -237,7 +237,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder $collection
      */
     public static function optionsFromCollectionForSelect(
         array|Collection|QueryBuilder $collection,
@@ -267,7 +267,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder $collection
      */
     public static function optionGroupsFromCollectionForSelect(
         array|Collection|QueryBuilder $collection,
@@ -307,7 +307,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param string|Stringable|array<mixed>|Collection|null $choices
+     * @param string|Stringable|array<mixed>|Collection<array-key, mixed>|null $choices
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -416,7 +416,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      * @return HtmlStringGenerator
@@ -453,7 +453,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      * @return HtmlStringGenerator
@@ -490,7 +490,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param string|Stringable|array<mixed>|Collection|null $choices
+     * @param string|Stringable|array<mixed>|Collection<array-key, mixed>|null $choices
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      * @return HtmlStringGenerator
@@ -576,7 +576,7 @@ trait FormOptionsHelper {
     }
 
     /**
-     * @param array<mixed>|Collection $collection
+     * @param array<mixed>|Collection<array-key, mixed> $collection
      */
     protected static function extractValuesFromCollection(
         array|Collection $collection,

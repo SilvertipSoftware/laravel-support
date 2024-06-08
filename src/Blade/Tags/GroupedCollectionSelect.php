@@ -13,7 +13,7 @@ use Illuminate\Support\HtmlString;
 class GroupedCollectionSelect extends Base {
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder $collection
      * @param array<string,mixed> $options
      * @param array<string,mixed> $htmlOptions
      */

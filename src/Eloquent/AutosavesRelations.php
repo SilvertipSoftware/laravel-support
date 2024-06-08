@@ -182,7 +182,7 @@ trait AutosavesRelations {
     }
 
     /**
-     * @param Collection|Model|array<Model>|null $value
+     * @param Collection<array-key, Model>|Model|array<Model>|null $value
      * @param array<string,mixed> $pushOptions
      */
     protected function pushAutosavedRelation(

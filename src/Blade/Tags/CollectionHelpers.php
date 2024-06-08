@@ -16,7 +16,7 @@ use Stringable;
 trait CollectionHelpers {
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param array<string,mixed> $options
      * @param array<string,mixed> $htmlOptions
      */
