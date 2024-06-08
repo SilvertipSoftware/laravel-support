@@ -21,7 +21,7 @@ enum AccountStatus: int {
             1 => 100,
             2 => 90,
             3 => 0
-        ])[$this->value];
+        ])[$this->value]; // phpcs:ignore
     }
 }
 

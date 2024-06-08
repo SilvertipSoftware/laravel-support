@@ -14,6 +14,10 @@ use JsonSerializable;
 use RuntimeException;
 use SilvertipSoftware\LaravelSupport\Libs\ArrUtils;
 
+/**
+ * @implements ArrayAccess<string, mixed>
+ * @implements Arrayable<string, mixed>
+ */
 class Parameters implements Arrayable, ArrayAccess, Jsonable, JsonSerializable {
 
     /** @var array<array<string,mixed>|Parameters> */

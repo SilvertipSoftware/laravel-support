@@ -113,7 +113,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -139,7 +139,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -165,7 +165,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -270,7 +270,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      */
@@ -532,7 +532,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      * @return HtmlStringGenerator
@@ -562,7 +562,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Collection|QueryBuilder|null $collection
+     * @param array<mixed>|Collection<array-key, mixed>|QueryBuilder|null $collection
      * @param OptionHash $options
      * @param OptionHash $htmlOptions
      * @return HtmlStringGenerator
@@ -710,7 +710,7 @@ class FormBuilder {
     }
 
     /**
-     * @param array<mixed>|Model|Collection|null $association
+     * @param array<mixed>|Model|Collection<array-key, mixed>|null $association
      * @param OptionHash $options
      * @return HtmlStringGenerator
      */

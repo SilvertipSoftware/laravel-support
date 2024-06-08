@@ -23,15 +23,19 @@
     },
     "scripts": {
         "check-all": [
+            "@code-validate",
+            "@ut"
+        ],
+        "code-validate": [
             "@lint",
             "@cs",
             "@stan",
-            "@ut"
+            "@cscompat81"
         ],
         "cs": "vendor/bin/phpcs --standard=devops/style --report-width=80 --colors .",
         "lint": "vendor/bin/parallel-lint --exclude .git --exclude vendor --colors .",
         "stan": "vendor/bin/phpstan analyse --configuration=devops/phpstan.neon",
         "ut": "vendor/bin/phpunit",
-        "cscompat81": "vendor/bin/phpcs --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --colors --runtime-set testVersion 8.1- --ignore=blade.php src tests"
+        "cscompat81": "vendor/bin/phpcs --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --colors --runtime-set testVersion 8.1- --ignore=tests/views/ src tests"
     }
 }

@@ -1,0 +1,17 @@
+version: '3'
+name: support
+
+x-var-check:
+    - SUPPORT_PATH: ${SUPPORT_PATH?missing}
+
+services:
+    support:
+        image: vpf/support-php8.2-alpine3.19
+        build:
+            context: ${SUPPORT_PATH}
+            dockerfile: ./devops/containers/dev/Dockerfile
+        volumes:
+            - type: bind
+              source: ${SUPPORT_PATH}
+              target: /var/www/html
+
