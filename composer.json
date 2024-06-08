@@ -23,10 +23,14 @@
     },
     "scripts": {
         "check-all": [
+            "@code-validate",
+            "@ut"
+        ],
+        "code-validate": [
             "@lint",
             "@cs",
             "@stan",
-            "@ut"
+            "@cscompat81"
         ],
         "cs": "vendor/bin/phpcs --standard=devops/style --report-width=80 --colors .",
         "lint": "vendor/bin/parallel-lint --exclude .git --exclude vendor --colors .",

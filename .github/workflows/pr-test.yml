@@ -20,17 +20,9 @@ jobs:
         run: |
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      - name: PHP Lint
+      - name: Code Validation
         run: |
-          composer run lint
-
-      - name: Check code style
-        run: |
-          composer run cs
-
-      - name: Check PHP compatibility
-        run: |
-          composer run cscompat8
+          composer run code-validate
 
   phpunit:
     runs-on: ubuntu-latest
